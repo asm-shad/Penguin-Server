@@ -23,16 +23,7 @@ const createUser = async (
     profileImageUrl = uploadToCloudinary?.secure_url;
   }
 
-  let userData;
-  if (req.body.data) {
-    // For form-data requests, data is in req.body.data as JSON string
-    userData = JSON.parse(req.body.data);
-  } else {
-    // For regular JSON requests, data is directly in req.body
-    userData = req.body;
-  }
-
-  const { email, password, name, phone, gender } = userData;
+  const { email, password, name, phone, gender } = req.body;
 
   const hashedPassword: string = await bcrypt.hash(
     password,
