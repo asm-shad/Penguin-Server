@@ -1,0 +1,136 @@
+// --- prisma/schema/product_inventory.prisma ---
+
+model Brand {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  products    Product[]
+
+  @@map("brands")
+}
+
+model Category {
+  id                String            @id @default(uuid())
+  name              String
+  slug              String            @unique
+  description       String?
+  priceRange        Float?
+  isFeatured        Boolean           @default(false)
+  imageUrl          String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  productCategories ProductCategory[]
+
+  @@map("categories")
+}
+
+model Product {
+  id                  String             @id @default(uuid())
+  name                String
+  slug                String             @unique
+  description         String?
+  price               Float // Base price
+  discount            Float              @default(0)
+  // stock field REMOVED. Inventory is tracked via ProductVariant model.
+  status              ProductStatus      @default(NEW)
+  variant             ProductVariantType @default(OTHERS)
+  isFeatured          Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  // Relations
+  brandId             String?
+  brand               Brand?             @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  productCategories   ProductCategory[]
+  productImages       ProductImage[]
+  productReviews      ProductReview[]
+  orderItems          OrderItem[]
+  wishlists           Wishlist[]
+  productVariants     ProductVariant[]
+  productInventories  ProductInventory[]
+  returnItems         ReturnItem[]
+
+  @@map("products")
+}
+
+model ProductCategory {
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, categoryId])
+  @@map("product_categories")
+}
+
+model ProductImage {
+  id          String    @id @default(uuid())
+  imageUrl    String
+  altText     String?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model ProductVariant {
+  id          String      @id @default(uuid())
+  name        String // e.g., "Color"
+  value       String // e.g., "Red"
+  sku         String?     @unique
+  price       Float? // Price override for the variant
+  stock       Int         @default(0)
+  imageUrl    String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  productId   String
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+  productInventories ProductInventory[] // Link to new Inventory model
+
+  @@unique([productId, name, value])
+  @@map("product_variants")
+}
+
+model ProductInventory {
+  id              String               @id @default(uuid())
+  changeType      InventoryChangeType
+  previousStock   Int
+  newStock        Int
+  changeQuantity  Int
+  reason          String?
+  referenceId     String? // E.g., OrderId, ReturnId, or PO number
+  notes           String?
+  createdAt       DateTime             @default(now())
+
+  // Relations
+  productId       String
+  product         Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // New optional relation to track changes at the variant level
+  variantId       String?
+  variant         ProductVariant?      @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  userId          String?
+  user            User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("product_inventories")
+}

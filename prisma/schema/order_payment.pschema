@@ -1,0 +1,189 @@
+// --- prisma/schema/order_payment.prisma ---
+
+model Coupon {
+  id              String         @id @default(uuid())
+  code            String         @unique
+  description     String?
+  discountType    DiscountType
+  discountValue   Float
+  maxUses         Int?
+  usedCount       Int            @default(0)
+  minOrderAmount  Float          @default(0)
+  validFrom       DateTime       @default(now())
+  validUntil      DateTime?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  orders          Order[]
+
+  @@map("coupons")
+}
+
+model Order {
+  id                      String        @id @default(uuid())
+  orderNumber             String        @unique
+  customerName            String
+  customerEmail           String
+  subtotal                Float
+  discountAmount          Float         @default(0)
+  totalPrice              Float
+  currency                String        @default("USD")
+  
+  // These shipping fields capture the snapshot at the time of order
+  shippingName            String?
+  shippingAddress         String?
+  shippingCity            String?
+  shippingState           String?
+  shippingZipCode         String?
+  
+  // Payment gateway specific fields
+  stripeCheckoutSessionId String?
+  stripeCustomerId        String?
+  stripePaymentIntentId   String?
+  
+  status                  OrderStatus   @default(PENDING)
+  orderDate               DateTime      @default(now())
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  // Relations
+  userId                  String
+  user                    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  couponId                String?
+  coupon                  Coupon?       @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  orderItems              OrderItem[]
+  invoice                 Invoice?
+  payments                Payment[]
+  paymentAttempts         PaymentAttempt[]
+  orderTrackings          OrderTracking[]
+  shipping                Shipping?
+  returnRequests          ReturnRequest[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String          @id @default(uuid())
+  quantity      Int
+  unitPrice     Float
+  discount      Float           @default(0)
+  // Denormalized fields for historical accuracy
+  productName   String
+  productSlug   String
+  variantInfo   String?
+  createdAt     DateTime        @default(now())
+
+  // Relations
+  orderId       String
+  order         Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId     String?
+  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  returnItems   ReturnItem[]
+
+  @@map("order_items")
+}
+
+model Invoice {
+  id                  String    @id @default(uuid())
+  stripeInvoiceId     String?
+  invoiceNumber       String?
+  hostedInvoiceUrl    String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  orderId             String    @unique
+  order               Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+model Payment {
+  id              String          @id @default(uuid())
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus   @default(PENDING)
+  paymentGateway  PaymentGateway
+  transactionId   String?
+  amount          Float
+  currency        String          @default("USD")
+  gatewayResponse Json?
+  failureReason   String?
+  paidAt          DateTime?
+  refundedAmount  Float           @default(0)
+  refundedAt      DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  orderId         String
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model PaymentAttempt {
+  id                    String               @id @default(uuid())
+  attemptNumber         Int
+  paymentMethod         PaymentMethod
+  amount                Float
+  currency              String               @default("USD")
+  gatewayTransactionId  String?
+  status                PaymentAttemptStatus @default(INITIATED)
+  failureReason         String?
+  gatewayResponse       Json?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  // Relations
+  orderId               String
+  order                 Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payment_attempts")
+}
+
+model OrderTracking {
+  id                  String      @id @default(uuid())
+  status              OrderStatus
+  notes               String?
+  location            String?
+  estimatedDelivery   DateTime?
+  actualDelivery      DateTime?
+  createdAt           DateTime    @default(now())
+
+  // Relations
+  orderId             String
+  order               Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId              String?
+  user                User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt])
+  @@map("order_trackings")
+}
+
+model Shipping {
+  id              String          @id @default(uuid())
+  carrier         ShippingCarrier
+  trackingNumber  String?
+  shippingMethod  ShippingMethod
+  shippingCost    Float
+  estimatedDays   Int?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  orderId         String          @unique
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("shipping")
+}

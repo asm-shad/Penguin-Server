@@ -1,0 +1,66 @@
+// --- prisma/schema/blog.prisma ---
+
+model BlogCategory {
+  id                   String             @id @default(uuid())
+  name                 String
+  slug                 String             @unique
+  description          String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  // Relations
+  blogPostCategories   BlogPostCategory[]
+
+  @@map("blog_categories")
+}
+
+model Author {
+  id                  String     @id @default(uuid())
+  name                String
+  slug                String     @unique
+  bio                 String?
+  profileImageUrl     String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  // Relations
+  userId              String?    @unique // Optional: Allows for guest authors
+  user                User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blogPosts           BlogPost[]
+
+  @@map("authors")
+}
+
+model BlogPost {
+  id                  String             @id @default(uuid())
+  title               String
+  slug                String             @unique
+  excerpt             String?
+  content             Json? // Using Json to support rich text/block content
+  featuredImageUrl    String?
+  isLatest            Boolean            @default(true)
+  publishedAt         DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  // Relations
+  authorId            String
+  author              Author             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  blogPostCategories  BlogPostCategory[]
+
+  @@map("blog_posts")
+}
+
+model BlogPostCategory {
+  id            String          @id @default(uuid())
+  createdAt     DateTime        @default(now())
+
+  // Relations
+  blogPostId    String
+  blogPost      BlogPost        @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  categoryId    String
+  category      BlogCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([blogPostId, categoryId])
+  @@map("blog_post_categories")
+}

@@ -1,0 +1,41 @@
+// --- prisma/schema/returns.prisma ---
+
+model ReturnRequest {
+  id              String        @id @default(uuid())
+  returnReason    ReturnReason
+  status          ReturnStatus  @default(REQUESTED)
+  additionalNotes String?
+  refundAmount    Float?
+  approvedAt      DateTime?
+  processedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  orderId         String
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  returnItems     ReturnItem[]
+
+  @@map("return_requests")
+}
+
+model ReturnItem {
+  id            String        @id @default(uuid())
+  quantity      Int
+  returnReason  String?
+  condition     ItemCondition
+  refundAmount  Float?
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  returnId      String
+  returnRequest ReturnRequest @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  orderItemId   String
+  orderItem     OrderItem     @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("return_items")
+}

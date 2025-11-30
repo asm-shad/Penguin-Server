@@ -1,0 +1,738 @@
+
+// --- Start of head.prisma ---
+
+// --- prisma/schema/head.prisma ---
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+// --- End of head.prisma ---
+
+
+// --- Start of enums.prisma ---
+
+// --- prisma/schema/enums.prisma ---
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN 
+  PRODUCT_MANAGER
+  CUSTOMER_SUPPORT
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ProductStatus {
+  NEW
+  HOT 
+  SALE
+}
+
+enum ProductVariantType {
+  GADGET
+  APPLIANCES
+  REFRIGERATORS
+  OTHERS
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  PAID
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  STRIPE
+  BANK_TRANSFER
+  COD
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  CANCELLED
+}
+
+enum PaymentGateway {
+  STRIPE
+  PAYPAL
+  RAZORPAY
+  CASH_ON_DELIVERY
+}
+
+enum PaymentAttemptStatus {
+  INITIATED
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum InventoryChangeType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
+  RETURN
+  DAMAGE
+  EXPIRED
+}
+
+enum ShippingCarrier {
+  FEDEX
+  UPS
+  DHL
+  USPS
+  BLUE_DART
+  DELHIVERY
+  OTHER
+}
+
+enum ShippingMethod {
+  STANDARD
+  EXPRESS
+  NEXT_DAY
+  SAME_DAY
+  INTERNATIONAL
+}
+
+enum ReturnReason {
+  DEFECTIVE
+  WRONG_ITEM
+  SIZE_ISSUE
+  QUALITY_ISSUE
+  NOT_AS_DESCRIBED
+  CHANGE_OF_MIND
+  OTHER
+}
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PICKUP_SCHEDULED
+  PICKUP_COMPLETED
+  REFUND_PROCESSED
+  COMPLETED
+}
+
+enum ItemCondition {
+  UNOPENED
+  LIKE_NEW
+  USED
+  DAMAGED
+  DEFECTIVE
+}
+// --- End of enums.prisma ---
+
+
+// --- Start of user_address.prisma ---
+
+// --- prisma/schema/user_address.prisma ---
+
+model User {
+  id                  String         @id @default(uuid())
+  email               String         @unique
+  firstName           String?
+  lastName            String?
+  password            String
+  role                UserRole       @default(USER)
+  gender              Gender?
+  phone               String?
+  profileImageUrl     String?
+  userStatus          UserStatus     @default(ACTIVE)
+  needPasswordReset   Boolean        @default(true)
+  isDeleted           Boolean        @default(false)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // Relations
+  userAddresses       UserAddress[]
+  orders              Order[]
+  productReviews      ProductReview[]
+  wishlists           Wishlist[]
+  author              Author?
+  payments            Payment[]
+  paymentAttempts     PaymentAttempt[]
+  productInventories  ProductInventory[]
+  orderTrackings      OrderTracking[]
+  returnRequests      ReturnRequest[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model Address {
+  id            String          @id @default(uuid())
+  addressLine   String
+  city          String
+  state         String
+  zipCode       String
+  country       String?         @default("US")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  userAddresses UserAddress[]
+
+  @@map("addresses")
+}
+
+model UserAddress {
+  id            String    @id @default(uuid())
+  addressName   String
+  email         String?
+  isDefault     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addressId     String
+  address       Address   @relation(fields: [addressId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, addressId])
+  @@map("user_addresses")
+}
+// --- End of user_address.prisma ---
+
+
+// --- Start of product_inventory.prisma ---
+
+// --- prisma/schema/product_inventory.prisma ---
+
+model Brand {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  products    Product[]
+
+  @@map("brands")
+}
+
+model Category {
+  id                String            @id @default(uuid())
+  name              String
+  slug              String            @unique
+  description       String?
+  priceRange        Float?
+  isFeatured        Boolean           @default(false)
+  imageUrl          String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  productCategories ProductCategory[]
+
+  @@map("categories")
+}
+
+model Product {
+  id                  String             @id @default(uuid())
+  name                String
+  slug                String             @unique
+  description         String?
+  price               Float // Base price
+  discount            Float              @default(0)
+  // stock field REMOVED. Inventory is tracked via ProductVariant model.
+  status              ProductStatus      @default(NEW)
+  variant             ProductVariantType @default(OTHERS)
+  isFeatured          Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  // Relations
+  brandId             String?
+  brand               Brand?             @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  productCategories   ProductCategory[]
+  productImages       ProductImage[]
+  productReviews      ProductReview[]
+  orderItems          OrderItem[]
+  wishlists           Wishlist[]
+  productVariants     ProductVariant[]
+  productInventories  ProductInventory[]
+  returnItems         ReturnItem[]
+
+  @@map("products")
+}
+
+model ProductCategory {
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, categoryId])
+  @@map("product_categories")
+}
+
+model ProductImage {
+  id          String    @id @default(uuid())
+  imageUrl    String
+  altText     String?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model ProductVariant {
+  id          String      @id @default(uuid())
+  name        String // e.g., "Color"
+  value       String // e.g., "Red"
+  sku         String?     @unique
+  price       Float? // Price override for the variant
+  stock       Int         @default(0)
+  imageUrl    String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  productId   String
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+  productInventories ProductInventory[] // Link to new Inventory model
+
+  @@unique([productId, name, value])
+  @@map("product_variants")
+}
+
+model ProductInventory {
+  id              String               @id @default(uuid())
+  changeType      InventoryChangeType
+  previousStock   Int
+  newStock        Int
+  changeQuantity  Int
+  reason          String?
+  referenceId     String? // E.g., OrderId, ReturnId, or PO number
+  notes           String?
+  createdAt       DateTime             @default(now())
+
+  // Relations
+  productId       String
+  product         Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // New optional relation to track changes at the variant level
+  variantId       String?
+  variant         ProductVariant?      @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  userId          String?
+  user            User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("product_inventories")
+}
+// --- End of product_inventory.prisma ---
+
+
+// --- Start of order_payment.prisma ---
+
+// --- prisma/schema/order_payment.prisma ---
+
+model Coupon {
+  id              String         @id @default(uuid())
+  code            String         @unique
+  description     String?
+  discountType    DiscountType
+  discountValue   Float
+  maxUses         Int?
+  usedCount       Int            @default(0)
+  minOrderAmount  Float          @default(0)
+  validFrom       DateTime       @default(now())
+  validUntil      DateTime?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  orders          Order[]
+
+  @@map("coupons")
+}
+
+model Order {
+  id                      String        @id @default(uuid())
+  orderNumber             String        @unique
+  customerName            String
+  customerEmail           String
+  subtotal                Float
+  discountAmount          Float         @default(0)
+  totalPrice              Float
+  currency                String        @default("USD")
+  
+  // These shipping fields capture the snapshot at the time of order
+  shippingName            String?
+  shippingAddress         String?
+  shippingCity            String?
+  shippingState           String?
+  shippingZipCode         String?
+  
+  // Payment gateway specific fields
+  stripeCheckoutSessionId String?
+  stripeCustomerId        String?
+  stripePaymentIntentId   String?
+  
+  status                  OrderStatus   @default(PENDING)
+  orderDate               DateTime      @default(now())
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  // Relations
+  userId                  String
+  user                    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  couponId                String?
+  coupon                  Coupon?       @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  orderItems              OrderItem[]
+  invoice                 Invoice?
+  payments                Payment[]
+  paymentAttempts         PaymentAttempt[]
+  orderTrackings          OrderTracking[]
+  shipping                Shipping?
+  returnRequests          ReturnRequest[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String          @id @default(uuid())
+  quantity      Int
+  unitPrice     Float
+  discount      Float           @default(0)
+  // Denormalized fields for historical accuracy
+  productName   String
+  productSlug   String
+  variantInfo   String?
+  createdAt     DateTime        @default(now())
+
+  // Relations
+  orderId       String
+  order         Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId     String?
+  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  returnItems   ReturnItem[]
+
+  @@map("order_items")
+}
+
+model Invoice {
+  id                  String    @id @default(uuid())
+  stripeInvoiceId     String?
+  invoiceNumber       String?
+  hostedInvoiceUrl    String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  orderId             String    @unique
+  order               Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+model Payment {
+  id              String          @id @default(uuid())
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus   @default(PENDING)
+  paymentGateway  PaymentGateway
+  transactionId   String?
+  amount          Float
+  currency        String          @default("USD")
+  gatewayResponse Json?
+  failureReason   String?
+  paidAt          DateTime?
+  refundedAmount  Float           @default(0)
+  refundedAt      DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  orderId         String
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model PaymentAttempt {
+  id                    String               @id @default(uuid())
+  attemptNumber         Int
+  paymentMethod         PaymentMethod
+  amount                Float
+  currency              String               @default("USD")
+  gatewayTransactionId  String?
+  status                PaymentAttemptStatus @default(INITIATED)
+  failureReason         String?
+  gatewayResponse       Json?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  // Relations
+  orderId               String
+  order                 Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payment_attempts")
+}
+
+model OrderTracking {
+  id                  String      @id @default(uuid())
+  status              OrderStatus
+  notes               String?
+  location            String?
+  estimatedDelivery   DateTime?
+  actualDelivery      DateTime?
+  createdAt           DateTime    @default(now())
+
+  // Relations
+  orderId             String
+  order               Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId              String?
+  user                User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt])
+  @@map("order_trackings")
+}
+
+model Shipping {
+  id              String          @id @default(uuid())
+  carrier         ShippingCarrier
+  trackingNumber  String?
+  shippingMethod  ShippingMethod
+  shippingCost    Float
+  estimatedDays   Int?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  orderId         String          @unique
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("shipping")
+}
+// --- End of order_payment.prisma ---
+
+
+// --- Start of returns.prisma ---
+
+// --- prisma/schema/returns.prisma ---
+
+model ReturnRequest {
+  id              String        @id @default(uuid())
+  returnReason    ReturnReason
+  status          ReturnStatus  @default(REQUESTED)
+  additionalNotes String?
+  refundAmount    Float?
+  approvedAt      DateTime?
+  processedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  orderId         String
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  returnItems     ReturnItem[]
+
+  @@map("return_requests")
+}
+
+model ReturnItem {
+  id            String        @id @default(uuid())
+  quantity      Int
+  returnReason  String?
+  condition     ItemCondition
+  refundAmount  Float?
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  returnId      String
+  returnRequest ReturnRequest @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  orderItemId   String
+  orderItem     OrderItem     @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("return_items")
+}
+// --- End of returns.prisma ---
+
+
+// --- Start of blog.prisma ---
+
+// --- prisma/schema/blog.prisma ---
+
+model BlogCategory {
+  id                   String             @id @default(uuid())
+  name                 String
+  slug                 String             @unique
+  description          String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  // Relations
+  blogPostCategories   BlogPostCategory[]
+
+  @@map("blog_categories")
+}
+
+model Author {
+  id                  String     @id @default(uuid())
+  name                String
+  slug                String     @unique
+  bio                 String?
+  profileImageUrl     String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  // Relations
+  userId              String?    @unique // Optional: Allows for guest authors
+  user                User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blogPosts           BlogPost[]
+
+  @@map("authors")
+}
+
+model BlogPost {
+  id                  String             @id @default(uuid())
+  title               String
+  slug                String             @unique
+  excerpt             String?
+  content             Json? // Using Json to support rich text/block content
+  featuredImageUrl    String?
+  isLatest            Boolean            @default(true)
+  publishedAt         DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  // Relations
+  authorId            String
+  author              Author             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  blogPostCategories  BlogPostCategory[]
+
+  @@map("blog_posts")
+}
+
+model BlogPostCategory {
+  id            String          @id @default(uuid())
+  createdAt     DateTime        @default(now())
+
+  // Relations
+  blogPostId    String
+  blogPost      BlogPost        @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  categoryId    String
+  category      BlogCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([blogPostId, categoryId])
+  @@map("blog_post_categories")
+}
+// --- End of blog.prisma ---
+
+
+// --- Start of misc.prisma ---
+
+// --- prisma/schema/misc.prisma ---
+
+model ProductReview {
+  id            String    @id @default(uuid())
+  rating        Int
+  title         String?
+  comment       String?
+  isApproved    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId]) // User can only review a product once
+  @@map("product_reviews")
+}
+
+model Wishlist {
+  id            String    @id @default(uuid())
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlists")
+}
+
+model AuditLog {
+  id            String    @id @default(uuid())
+  action        String
+  resourceType  String
+  resourceId    String?
+  oldValues     Json?
+  newValues     Json?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+// --- End of misc.prisma ---
+

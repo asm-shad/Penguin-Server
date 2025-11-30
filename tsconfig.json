@@ -1,0 +1,20 @@
+// tsconfig.json (Updated)
+{
+  "compilerOptions": {
+    "rootDir": "./",
+    "outDir": "./dist",
+    "module": "commonjs",
+    "target": "es2016",
+    "esModuleInterop": true,
+    "strict": true,
+    "types": ["node"],
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src",
+    "prisma.config.ts",
+    "build-schema.ts" // <--- ADD THIS LINE
+    // OR: "**/*.ts" if you want to include all TypeScript files in the project
+  ]
+}

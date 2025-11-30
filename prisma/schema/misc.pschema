@@ -1,0 +1,52 @@
+// --- prisma/schema/misc.prisma ---
+
+model ProductReview {
+  id            String    @id @default(uuid())
+  rating        Int
+  title         String?
+  comment       String?
+  isApproved    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId]) // User can only review a product once
+  @@map("product_reviews")
+}
+
+model Wishlist {
+  id            String    @id @default(uuid())
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlists")
+}
+
+model AuditLog {
+  id            String    @id @default(uuid())
+  action        String
+  resourceType  String
+  resourceId    String?
+  oldValues     Json?
+  newValues     Json?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

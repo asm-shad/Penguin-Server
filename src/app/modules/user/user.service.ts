@@ -1,0 +1,234 @@
+import { Prisma, UserRole, UserStatus, Gender } from "@prisma/client";
+import * as bcrypt from "bcryptjs";
+import { Request } from "express";
+import config from "../../../config";
+import { IAuthUser } from "../../interfaces/common";
+import { IPaginationOptions } from "../../interfaces/pagination";
+import { userSearchAbleFields } from "./user.constant";
+import { fileUploader } from "../../helper/fileUploader";
+import prisma from "../../shared/prisma";
+import { paginationHelper } from "../../helper/paginationHelper";
+
+// Use Prisma's generated types for better type safety
+type CreateUserData = Prisma.UserCreateInput & {
+  password: string;
+  needPasswordReset: boolean;
+};
+
+const createUser = async (
+  req: Request,
+  role: UserRole,
+  needPasswordReset: boolean = false
+) => {
+  const file = req.file;
+  let profileImageUrl: string | undefined;
+
+  // Handle file upload
+  if (file) {
+    const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
+    profileImageUrl = uploadToCloudinary?.secure_url;
+  }
+
+  // Extract user data from request body
+  const { email, password, firstName, lastName, phone, gender } = req.body;
+
+  const hashedPassword: string = await bcrypt.hash(
+    password,
+    Number(config.salt_round)
+  );
+
+  // Create properly typed user data
+  const userData: CreateUserData = {
+    email,
+    password: hashedPassword,
+    firstName,
+    lastName,
+    phone,
+    gender: gender as Gender, // Cast to Gender enum
+    profileImageUrl,
+    role,
+    needPasswordReset,
+    userStatus: UserStatus.ACTIVE, // Set default status
+    isDeleted: false, // Set default value
+  };
+
+  const result = await prisma.$transaction(async (transactionClient) => {
+    await transactionClient.user.create({
+      data: userData,
+    });
+
+    return { message: `${role.replace("_", " ")} created successfully!` };
+  });
+
+  return result;
+};
+
+// Simplified role-specific functions
+const createAdmin = async (req: Request) => {
+  return createUser(req, UserRole.ADMIN, true);
+};
+
+const createProductManager = async (req: Request) => {
+  return createUser(req, UserRole.PRODUCT_MANAGER, true);
+};
+
+const createCustomerSupport = async (req: Request) => {
+  return createUser(req, UserRole.CUSTOMER_SUPPORT, true);
+};
+
+const createRegularUser = async (req: Request) => {
+  return createUser(req, UserRole.USER, false);
+};
+
+// Keep the other functions as they are (they're already good)
+const getAllFromDB = async (params: any, options: IPaginationOptions) => {
+  const { page, limit, skip } = paginationHelper.calculatePagination(options);
+  const { searchTerm, ...filterData } = params;
+
+  const andConditions: Prisma.UserWhereInput[] = [];
+
+  if (params.searchTerm) {
+    andConditions.push({
+      OR: userSearchAbleFields.map((field) => ({
+        [field]: {
+          contains: params.searchTerm,
+          mode: "insensitive",
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.UserWhereInput =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.user.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? {
+            [options.sortBy]: options.sortOrder,
+          }
+        : {
+            createdAt: "desc",
+          },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      gender: true,
+      phone: true,
+      profileImageUrl: true,
+      userStatus: true,
+      needPasswordReset: true,
+      isDeleted: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  const total = await prisma.user.count({
+    where: whereConditions,
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: result,
+  };
+};
+
+const changeProfileStatus = async (
+  id: string,
+  status: { userStatus: UserStatus }
+) => {
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: { id },
+  });
+
+  const updateUserStatus = await prisma.user.update({
+    where: { id },
+    data: { userStatus: status.userStatus },
+  });
+
+  return updateUserStatus;
+};
+
+const getMyProfile = async (user: IAuthUser) => {
+  const userInfo = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: user?.email,
+      userStatus: UserStatus.ACTIVE,
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      gender: true,
+      phone: true,
+      profileImageUrl: true,
+      userStatus: true,
+      needPasswordReset: true,
+      isDeleted: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return userInfo;
+};
+
+const updateMyProfie = async (user: IAuthUser, req: Request) => {
+  const userInfo = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: user?.email,
+      userStatus: UserStatus.ACTIVE,
+    },
+  });
+
+  const file = req.file;
+  let updateData = { ...req.body };
+
+  if (file) {
+    const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
+    updateData.profileImageUrl = uploadToCloudinary?.secure_url;
+  }
+
+  const updatedProfile = await prisma.user.update({
+    where: {
+      email: userInfo.email,
+    },
+    data: updateData,
+  });
+
+  return updatedProfile;
+};
+
+export const userService = {
+  createAdmin,
+  createProductManager,
+  createCustomerSupport,
+  createUser: createRegularUser,
+  getAllFromDB,
+  changeProfileStatus,
+  getMyProfile,
+  updateMyProfie,
+};

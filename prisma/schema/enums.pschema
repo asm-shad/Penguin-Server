@@ -1,0 +1,138 @@
+// --- prisma/schema/enums.prisma ---
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN 
+  PRODUCT_MANAGER
+  CUSTOMER_SUPPORT
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ProductStatus {
+  NEW
+  HOT 
+  SALE
+}
+
+enum ProductVariantType {
+  GADGET
+  APPLIANCES
+  REFRIGERATORS
+  OTHERS
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  PAID
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  STRIPE
+  BANK_TRANSFER
+  COD
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  CANCELLED
+}
+
+enum PaymentGateway {
+  STRIPE
+  PAYPAL
+  RAZORPAY
+  CASH_ON_DELIVERY
+}
+
+enum PaymentAttemptStatus {
+  INITIATED
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum InventoryChangeType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
+  RETURN
+  DAMAGE
+  EXPIRED
+}
+
+enum ShippingCarrier {
+  FEDEX
+  UPS
+  DHL
+  USPS
+  BLUE_DART
+  DELHIVERY
+  OTHER
+}
+
+enum ShippingMethod {
+  STANDARD
+  EXPRESS
+  NEXT_DAY
+  SAME_DAY
+  INTERNATIONAL
+}
+
+enum ReturnReason {
+  DEFECTIVE
+  WRONG_ITEM
+  SIZE_ISSUE
+  QUALITY_ISSUE
+  NOT_AS_DESCRIBED
+  CHANGE_OF_MIND
+  OTHER
+}
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PICKUP_SCHEDULED
+  PICKUP_COMPLETED
+  REFUND_PROCESSED
+  COMPLETED
+}
+
+enum ItemCondition {
+  UNOPENED
+  LIKE_NEW
+  USED
+  DAMAGED
+  DEFECTIVE
+}

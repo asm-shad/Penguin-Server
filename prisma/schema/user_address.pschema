@@ -1,0 +1,67 @@
+// --- prisma/schema/user_address.prisma ---
+
+model User {
+  id                  String         @id @default(uuid())
+  email               String         @unique
+  firstName           String?
+  lastName            String?
+  password            String
+  role                UserRole       @default(USER)
+  gender              Gender?
+  phone               String?
+  profileImageUrl     String?
+  userStatus          UserStatus     @default(ACTIVE)
+  needPasswordReset   Boolean        @default(true)
+  isDeleted           Boolean        @default(false)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // Relations
+  userAddresses       UserAddress[]
+  orders              Order[]
+  productReviews      ProductReview[]
+  wishlists           Wishlist[]
+  author              Author?
+  payments            Payment[]
+  paymentAttempts     PaymentAttempt[]
+  productInventories  ProductInventory[]
+  orderTrackings      OrderTracking[]
+  returnRequests      ReturnRequest[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model Address {
+  id            String          @id @default(uuid())
+  addressLine   String
+  city          String
+  state         String
+  zipCode       String
+  country       String?         @default("US")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  userAddresses UserAddress[]
+
+  @@map("addresses")
+}
+
+model UserAddress {
+  id            String    @id @default(uuid())
+  addressName   String
+  email         String?
+  isDefault     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addressId     String
+  address       Address   @relation(fields: [addressId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, addressId])
+  @@map("user_addresses")
+}
