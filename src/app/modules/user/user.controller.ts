@@ -40,8 +40,8 @@ const createCustomerSupport = catchAsync(
   }
 );
 
-const createUser = catchAsync(async (req: Request, res: Response) => {
-  const result = await userService.createUser(req);
+const createRegularUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await userService.createRegularUser(req);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -109,7 +109,7 @@ export const userController = {
   createAdmin,
   createProductManager,
   createCustomerSupport,
-  createUser,
+  createRegularUser,
   getAllFromDB,
   changeProfileStatus,
   getMyProfile,

@@ -9,12 +9,6 @@ import { fileUploader } from "../../helper/fileUploader";
 import prisma from "../../shared/prisma";
 import { paginationHelper } from "../../helper/paginationHelper";
 
-// Use Prisma's generated types for better type safety
-type CreateUserData = Prisma.UserCreateInput & {
-  password: string;
-  needPasswordReset: boolean;
-};
-
 const createUser = async (
   req: Request,
   role: UserRole,
@@ -29,35 +23,53 @@ const createUser = async (
     profileImageUrl = uploadToCloudinary?.secure_url;
   }
 
-  // Extract user data from request body
-  const { email, password, firstName, lastName, phone, gender } = req.body;
+  let userData;
+  if (req.body.data) {
+    // For form-data requests, data is in req.body.data as JSON string
+    userData = JSON.parse(req.body.data);
+  } else {
+    // For regular JSON requests, data is directly in req.body
+    userData = req.body;
+  }
+
+  const { email, password, name, phone, gender } = userData;
 
   const hashedPassword: string = await bcrypt.hash(
     password,
     Number(config.salt_round)
   );
 
-  // Create properly typed user data
-  const userData: CreateUserData = {
-    email,
-    password: hashedPassword,
-    firstName,
-    lastName,
-    phone,
-    gender: gender as Gender, // Cast to Gender enum
-    profileImageUrl,
-    role,
-    needPasswordReset,
-    userStatus: UserStatus.ACTIVE, // Set default status
-    isDeleted: false, // Set default value
-  };
-
   const result = await prisma.$transaction(async (transactionClient) => {
-    await transactionClient.user.create({
-      data: userData,
+    const createdUser = await transactionClient.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+        phone,
+        gender: gender as Gender,
+        profileImageUrl,
+        role,
+        needPasswordReset,
+        userStatus: UserStatus.ACTIVE,
+        isDeleted: false,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        gender: true,
+        phone: true,
+        profileImageUrl: true,
+        userStatus: true,
+        needPasswordReset: true,
+        isDeleted: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
-    return { message: `${role.replace("_", " ")} created successfully!` };
+    return createdUser;
   });
 
   return result;
@@ -126,8 +138,7 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
     select: {
       id: true,
       email: true,
-      firstName: true,
-      lastName: true,
+      name: true,
       role: true,
       gender: true,
       phone: true,
@@ -179,8 +190,7 @@ const getMyProfile = async (user: IAuthUser) => {
     select: {
       id: true,
       email: true,
-      firstName: true,
-      lastName: true,
+      name: true,
       role: true,
       gender: true,
       phone: true,
@@ -226,7 +236,7 @@ export const userService = {
   createAdmin,
   createProductManager,
   createCustomerSupport,
-  createUser: createRegularUser,
+  createRegularUser,
   getAllFromDB,
   changeProfileStatus,
   getMyProfile,

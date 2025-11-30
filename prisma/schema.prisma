@@ -163,8 +163,7 @@ enum ItemCondition {
 model User {
   id                  String         @id @default(uuid())
   email               String         @unique
-  firstName           String?
-  lastName            String?
+  name                String
   password            String
   role                UserRole       @default(USER)
   gender              Gender?

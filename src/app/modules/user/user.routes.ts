@@ -72,7 +72,7 @@ router.post(
   "/create-user",
   fileUploader.upload.single("file"),
   parseUserData(userValidation.createRegularUser),
-  userController.createUser
+  userController.createRegularUser
 );
 
 router.patch(

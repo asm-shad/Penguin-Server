@@ -21,8 +21,7 @@ const UserStatusEnum = z.enum([
 const createUserBaseSchema = z.object({
   email: z.string().min(1, "Email is required!").email("Invalid email format"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  firstName: z.string().min(1, "First name is required!"),
-  lastName: z.string().min(1, "Last name is required!"),
+  name: z.string().min(4, "Name is required!"),
   phone: z.string().optional(),
   gender: GenderEnum.optional(),
 });
@@ -52,8 +51,7 @@ const updateStatus = z.object({
 
 // Update profile schema
 const updateProfileSchema = z.object({
-  firstName: z.string().min(1, "First name is required!").optional(),
-  lastName: z.string().min(1, "Last name is required!").optional(),
+  name: z.string().min(4, "Name is required!"),
   phone: z.string().optional(),
   gender: GenderEnum.optional(),
   profileImageUrl: z.string().optional(),
@@ -71,11 +69,7 @@ export const userValidation = {
   UserStatusEnum,
 };
 
-export const userSearchAbleFields: string[] = [
-  "email",
-  "firstName",
-  "lastName",
-];
+export const userSearchAbleFields: string[] = ["email", "name"];
 
 export const userFilterableFields: string[] = [
   "email",
