@@ -9,6 +9,7 @@ import { fileUploader } from "../../helper/fileUploader";
 import prisma from "../../shared/prisma";
 import { paginationHelper } from "../../helper/paginationHelper";
 
+// user.service.ts
 const createUser = async (
   req: Request,
   role: UserRole,
@@ -66,7 +67,7 @@ const createUser = async (
   return result;
 };
 
-// Simplified role-specific functions
+// Staff creation functions (no address required)
 const createAdmin = async (req: Request) => {
   return createUser(req, UserRole.ADMIN, true);
 };
@@ -79,8 +80,92 @@ const createCustomerSupport = async (req: Request) => {
   return createUser(req, UserRole.CUSTOMER_SUPPORT, true);
 };
 
+// Regular user creation with address
 const createRegularUser = async (req: Request) => {
-  return createUser(req, UserRole.USER, false);
+  const file = req.file;
+  let profileImageUrl: string | undefined;
+
+  // Handle file upload
+  if (file) {
+    const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
+    profileImageUrl = uploadToCloudinary?.secure_url;
+  }
+
+  const { email, password, name, phone, gender, address, userAddress } =
+    req.body;
+
+  const hashedPassword: string = await bcrypt.hash(
+    password,
+    Number(config.salt_round)
+  );
+
+  const result = await prisma.$transaction(async (transactionClient) => {
+    // Step 1: Create the user
+    const createdUser = await transactionClient.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+        phone,
+        gender: gender as Gender,
+        profileImageUrl,
+        role: UserRole.USER,
+        needPasswordReset: false,
+        userStatus: UserStatus.ACTIVE,
+        isDeleted: false,
+      },
+    });
+
+    // Step 2: Create the address
+    const createdAddress = await transactionClient.address.create({
+      data: {
+        addressLine: address.addressLine,
+        city: address.city,
+        state: address.state,
+        zipCode: address.zipCode,
+        country: address.country || "US",
+      },
+    });
+
+    // Step 3: Create the user-address relationship
+    await transactionClient.userAddress.create({
+      data: {
+        addressName: userAddress.addressName,
+        email: userAddress.email || email,
+        isDefault: userAddress.isDefault || true, // First address is default
+        userId: createdUser.id,
+        addressId: createdAddress.id,
+      },
+    });
+
+    // Step 4: Return user with address information
+    const userWithAddress = await transactionClient.user.findUnique({
+      where: { id: createdUser.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        gender: true,
+        phone: true,
+        profileImageUrl: true,
+        userStatus: true,
+        needPasswordReset: true,
+        isDeleted: true,
+        createdAt: true,
+        updatedAt: true,
+        userAddresses: {
+          include: {
+            address: true,
+          },
+        },
+      },
+    });
+
+    return userWithAddress;
+  });
+
+  return result;
 };
 
 // Keep the other functions as they are (they're already good)
