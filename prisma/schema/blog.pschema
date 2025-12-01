@@ -1,5 +1,4 @@
-// --- prisma/schema/blog.prisma ---
-
+// --- Start of blog.prisma ---
 model BlogCategory {
   id                   String             @id @default(uuid())
   name                 String
@@ -24,7 +23,7 @@ model Author {
   updatedAt           DateTime   @updatedAt
 
   // Relations
-  userId              String?    @unique // Optional: Allows for guest authors
+  userId              String?    @unique
   user                User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   blogPosts           BlogPost[]
 
@@ -36,7 +35,7 @@ model BlogPost {
   title               String
   slug                String             @unique
   excerpt             String?
-  content             Json? // Using Json to support rich text/block content
+  content             Json?
   featuredImageUrl    String?
   isLatest            Boolean            @default(true)
   publishedAt         DateTime?
@@ -64,3 +63,4 @@ model BlogPostCategory {
   @@unique([blogPostId, categoryId])
   @@map("blog_post_categories")
 }
+// --- End of blog.prisma ---

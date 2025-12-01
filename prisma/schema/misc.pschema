@@ -1,5 +1,4 @@
-// --- prisma/schema/misc.prisma ---
-
+// --- Start of misc.prisma ---
 model ProductReview {
   id            String    @id @default(uuid())
   rating        Int
@@ -15,7 +14,7 @@ model ProductReview {
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([productId, userId]) // User can only review a product once
+  @@unique([productId, userId])
   @@map("product_reviews")
 }
 
@@ -33,20 +32,5 @@ model Wishlist {
   @@map("wishlists")
 }
 
-model AuditLog {
-  id            String    @id @default(uuid())
-  action        String
-  resourceType  String
-  resourceId    String?
-  oldValues     Json?
-  newValues     Json?
-  ipAddress     String?
-  userAgent     String?
-  createdAt     DateTime  @default(now())
-
-  // Relations
-  userId        String?
-  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@map("audit_logs")
-}
+// REMOVED: AuditLog model
+// --- End of misc.prisma ---

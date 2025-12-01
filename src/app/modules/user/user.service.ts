@@ -9,7 +9,6 @@ import { fileUploader } from "../../helper/fileUploader";
 import prisma from "../../shared/prisma";
 import { paginationHelper } from "../../helper/paginationHelper";
 
-// user.service.ts
 const createUser = async (
   req: Request,
   role: UserRole,
@@ -276,9 +275,16 @@ const getMyProfile = async (user: IAuthUser) => {
       isDeleted: true,
       createdAt: true,
       updatedAt: true,
+      userAddresses: {
+        include: {
+          address: true,
+        },
+        orderBy: {
+          isDefault: "desc", // Put default address first
+        },
+      },
     },
   });
-
   return userInfo;
 };
 

@@ -1,5 +1,4 @@
-// --- prisma/schema/order_payment.prisma ---
-
+// --- Start of order_payment.prisma ---
 model Coupon {
   id              String         @id @default(uuid())
   code            String         @unique
@@ -48,7 +47,7 @@ model Order {
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
 
-  // Relations
+  // Relations (UPDATED: Removed paymentAttempts)
   userId                  String
   user                    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   couponId                String?
@@ -56,7 +55,6 @@ model Order {
   orderItems              OrderItem[]
   invoice                 Invoice?
   payments                Payment[]
-  paymentAttempts         PaymentAttempt[]
   orderTrackings          OrderTracking[]
   shipping                Shipping?
   returnRequests          ReturnRequest[]
@@ -127,28 +125,6 @@ model Payment {
   @@map("payments")
 }
 
-model PaymentAttempt {
-  id                    String               @id @default(uuid())
-  attemptNumber         Int
-  paymentMethod         PaymentMethod
-  amount                Float
-  currency              String               @default("USD")
-  gatewayTransactionId  String?
-  status                PaymentAttemptStatus @default(INITIATED)
-  failureReason         String?
-  gatewayResponse       Json?
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
-
-  // Relations
-  orderId               String
-  order                 Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  userId                String
-  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("payment_attempts")
-}
-
 model OrderTracking {
   id                  String      @id @default(uuid())
   status              OrderStatus
@@ -187,3 +163,4 @@ model Shipping {
 
   @@map("shipping")
 }
+// --- End of order_payment.prisma ---

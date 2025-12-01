@@ -1,5 +1,5 @@
 
-// --- Start of head.prisma ---
+// --- Start of head.pschema ---
 
 // --- prisma/schema/head.prisma ---
 
@@ -10,13 +10,12 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-// --- End of head.prisma ---
+// --- End of head.pschema ---
 
+
+// --- Start of enums.pschema ---
 
 // --- Start of enums.prisma ---
-
-// --- prisma/schema/enums.prisma ---
-
 enum UserRole {
   SUPER_ADMIN
   ADMIN 
@@ -41,14 +40,11 @@ enum ProductStatus {
   NEW
   HOT 
   SALE
+  OUT_OF_STOCK
+  DISCONTINUED
 }
 
-enum ProductVariantType {
-  GADGET
-  APPLIANCES
-  REFRIGERATORS
-  OTHERS
-}
+// REMOVED: ProductVariantType enum
 
 enum DiscountType {
   PERCENTAGE
@@ -63,6 +59,7 @@ enum OrderStatus {
   OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
+  REFUNDED
 }
 
 enum PaymentMethod {
@@ -91,13 +88,7 @@ enum PaymentGateway {
   CASH_ON_DELIVERY
 }
 
-enum PaymentAttemptStatus {
-  INITIATED
-  PROCESSING
-  SUCCESS
-  FAILED
-  CANCELLED
-}
+// REMOVED: PaymentAttemptStatus enum
 
 enum InventoryChangeType {
   STOCK_IN
@@ -154,12 +145,12 @@ enum ItemCondition {
   DEFECTIVE
 }
 // --- End of enums.prisma ---
+// --- End of enums.pschema ---
 
+
+// --- Start of user_address.pschema ---
 
 // --- Start of user_address.prisma ---
-
-// --- prisma/schema/user_address.prisma ---
-
 model User {
   id                  String         @id @default(uuid())
   email               String         @unique
@@ -175,18 +166,16 @@ model User {
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
-  // Relations
+  // Relations (UPDATED: Removed paymentAttempts and auditLogs)
   userAddresses       UserAddress[]
   orders              Order[]
   productReviews      ProductReview[]
   wishlists           Wishlist[]
   author              Author?
   payments            Payment[]
-  paymentAttempts     PaymentAttempt[]
   productInventories  ProductInventory[]
   orderTrackings      OrderTracking[]
   returnRequests      ReturnRequest[]
-  auditLogs           AuditLog[]
 
   @@map("users")
 }
@@ -225,12 +214,12 @@ model UserAddress {
   @@map("user_addresses")
 }
 // --- End of user_address.prisma ---
+// --- End of user_address.pschema ---
 
+
+// --- Start of product_inventory.pschema ---
 
 // --- Start of product_inventory.prisma ---
-
-// --- prisma/schema/product_inventory.prisma ---
-
 model Brand {
   id          String    @id @default(uuid())
   name        String    @unique
@@ -247,18 +236,20 @@ model Brand {
 }
 
 model Category {
-  id                String            @id @default(uuid())
-  name              String
-  slug              String            @unique
-  description       String?
-  priceRange        Float?
-  isFeatured        Boolean           @default(false)
-  imageUrl          String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  isFeatured  Boolean   @default(false)
+  parentId    String?   // For hierarchical categories
+  parent      Category? @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
   productCategories ProductCategory[]
+  children          Category[] @relation("CategoryChildren") // For hierarchical categories
 
   @@map("categories")
 }
@@ -270,14 +261,16 @@ model Product {
   description         String?
   price               Float // Base price
   discount            Float              @default(0)
-  // stock field REMOVED. Inventory is tracked via ProductVariant model.
+  salePrice           Float?             // Calculated sale price
   status              ProductStatus      @default(NEW)
-  variant             ProductVariantType @default(OTHERS)
   isFeatured          Boolean            @default(false)
+  isActive            Boolean            @default(true)
+  sku                 String?            @unique // Product SKU
+  stock               Int                @default(0) // Simple stock tracking
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
-  // Relations
+  // Relations (UPDATED: Removed subCategoryId)
   brandId             String?
   brand               Brand?             @relation(fields: [brandId], references: [id], onDelete: SetNull)
   productCategories   ProductCategory[]
@@ -311,6 +304,7 @@ model ProductImage {
   imageUrl    String
   altText     String?
   sortOrder   Int       @default(0)
+  isPrimary   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -323,12 +317,12 @@ model ProductImage {
 
 model ProductVariant {
   id          String      @id @default(uuid())
-  name        String // e.g., "Color"
-  value       String // e.g., "Red"
-  sku         String?     @unique
-  price       Float? // Price override for the variant
+  name        String      // e.g., "Color", "Size"
+  value       String      // e.g., "Red", "XL"
+  sku         String?     @unique // Variant SKU
+  price       Float?      // Price override for the variant (optional)
   stock       Int         @default(0)
-  imageUrl    String?
+  imageUrl    String?     // Variant-specific image
   isActive    Boolean     @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -337,7 +331,7 @@ model ProductVariant {
   productId   String
   product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   orderItems  OrderItem[]
-  productInventories ProductInventory[] // Link to new Inventory model
+  productInventories ProductInventory[]
 
   @@unique([productId, name, value])
   @@map("product_variants")
@@ -357,7 +351,6 @@ model ProductInventory {
   // Relations
   productId       String
   product         Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
-  // New optional relation to track changes at the variant level
   variantId       String?
   variant         ProductVariant?      @relation(fields: [variantId], references: [id], onDelete: SetNull)
   userId          String?
@@ -366,12 +359,12 @@ model ProductInventory {
   @@map("product_inventories")
 }
 // --- End of product_inventory.prisma ---
+// --- End of product_inventory.pschema ---
 
+
+// --- Start of order_payment.pschema ---
 
 // --- Start of order_payment.prisma ---
-
-// --- prisma/schema/order_payment.prisma ---
-
 model Coupon {
   id              String         @id @default(uuid())
   code            String         @unique
@@ -420,7 +413,7 @@ model Order {
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
 
-  // Relations
+  // Relations (UPDATED: Removed paymentAttempts)
   userId                  String
   user                    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   couponId                String?
@@ -428,7 +421,6 @@ model Order {
   orderItems              OrderItem[]
   invoice                 Invoice?
   payments                Payment[]
-  paymentAttempts         PaymentAttempt[]
   orderTrackings          OrderTracking[]
   shipping                Shipping?
   returnRequests          ReturnRequest[]
@@ -499,28 +491,6 @@ model Payment {
   @@map("payments")
 }
 
-model PaymentAttempt {
-  id                    String               @id @default(uuid())
-  attemptNumber         Int
-  paymentMethod         PaymentMethod
-  amount                Float
-  currency              String               @default("USD")
-  gatewayTransactionId  String?
-  status                PaymentAttemptStatus @default(INITIATED)
-  failureReason         String?
-  gatewayResponse       Json?
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
-
-  // Relations
-  orderId               String
-  order                 Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  userId                String
-  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("payment_attempts")
-}
-
 model OrderTracking {
   id                  String      @id @default(uuid())
   status              OrderStatus
@@ -560,12 +530,12 @@ model Shipping {
   @@map("shipping")
 }
 // --- End of order_payment.prisma ---
+// --- End of order_payment.pschema ---
 
+
+// --- Start of returns.pschema ---
 
 // --- Start of returns.prisma ---
-
-// --- prisma/schema/returns.prisma ---
-
 model ReturnRequest {
   id              String        @id @default(uuid())
   returnReason    ReturnReason
@@ -606,12 +576,12 @@ model ReturnItem {
   @@map("return_items")
 }
 // --- End of returns.prisma ---
+// --- End of returns.pschema ---
 
+
+// --- Start of blog.pschema ---
 
 // --- Start of blog.prisma ---
-
-// --- prisma/schema/blog.prisma ---
-
 model BlogCategory {
   id                   String             @id @default(uuid())
   name                 String
@@ -636,7 +606,7 @@ model Author {
   updatedAt           DateTime   @updatedAt
 
   // Relations
-  userId              String?    @unique // Optional: Allows for guest authors
+  userId              String?    @unique
   user                User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   blogPosts           BlogPost[]
 
@@ -648,7 +618,7 @@ model BlogPost {
   title               String
   slug                String             @unique
   excerpt             String?
-  content             Json? // Using Json to support rich text/block content
+  content             Json?
   featuredImageUrl    String?
   isLatest            Boolean            @default(true)
   publishedAt         DateTime?
@@ -677,12 +647,12 @@ model BlogPostCategory {
   @@map("blog_post_categories")
 }
 // --- End of blog.prisma ---
+// --- End of blog.pschema ---
 
+
+// --- Start of misc.pschema ---
 
 // --- Start of misc.prisma ---
-
-// --- prisma/schema/misc.prisma ---
-
 model ProductReview {
   id            String    @id @default(uuid())
   rating        Int
@@ -698,7 +668,7 @@ model ProductReview {
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([productId, userId]) // User can only review a product once
+  @@unique([productId, userId])
   @@map("product_reviews")
 }
 
@@ -716,22 +686,7 @@ model Wishlist {
   @@map("wishlists")
 }
 
-model AuditLog {
-  id            String    @id @default(uuid())
-  action        String
-  resourceType  String
-  resourceId    String?
-  oldValues     Json?
-  newValues     Json?
-  ipAddress     String?
-  userAgent     String?
-  createdAt     DateTime  @default(now())
-
-  // Relations
-  userId        String?
-  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@map("audit_logs")
-}
+// REMOVED: AuditLog model
 // --- End of misc.prisma ---
+// --- End of misc.pschema ---
 

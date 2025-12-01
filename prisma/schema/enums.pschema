@@ -1,5 +1,4 @@
-// --- prisma/schema/enums.prisma ---
-
+// --- Start of enums.prisma ---
 enum UserRole {
   SUPER_ADMIN
   ADMIN 
@@ -24,14 +23,11 @@ enum ProductStatus {
   NEW
   HOT 
   SALE
+  OUT_OF_STOCK
+  DISCONTINUED
 }
 
-enum ProductVariantType {
-  GADGET
-  APPLIANCES
-  REFRIGERATORS
-  OTHERS
-}
+// REMOVED: ProductVariantType enum
 
 enum DiscountType {
   PERCENTAGE
@@ -46,6 +42,7 @@ enum OrderStatus {
   OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
+  REFUNDED
 }
 
 enum PaymentMethod {
@@ -74,13 +71,7 @@ enum PaymentGateway {
   CASH_ON_DELIVERY
 }
 
-enum PaymentAttemptStatus {
-  INITIATED
-  PROCESSING
-  SUCCESS
-  FAILED
-  CANCELLED
-}
+// REMOVED: PaymentAttemptStatus enum
 
 enum InventoryChangeType {
   STOCK_IN
@@ -136,3 +127,4 @@ enum ItemCondition {
   DAMAGED
   DEFECTIVE
 }
+// --- End of enums.prisma ---

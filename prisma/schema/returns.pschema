@@ -1,5 +1,4 @@
-// --- prisma/schema/returns.prisma ---
-
+// --- Start of returns.prisma ---
 model ReturnRequest {
   id              String        @id @default(uuid())
   returnReason    ReturnReason
@@ -39,3 +38,4 @@ model ReturnItem {
 
   @@map("return_items")
 }
+// --- End of returns.prisma ---
