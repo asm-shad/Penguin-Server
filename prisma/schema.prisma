@@ -242,14 +242,11 @@ model Category {
   description String?
   imageUrl    String?
   isFeatured  Boolean   @default(false)
-  parentId    String?   // For hierarchical categories
-  parent      Category? @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: SetNull)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   // Relations
   productCategories ProductCategory[]
-  children          Category[] @relation("CategoryChildren") // For hierarchical categories
 
   @@map("categories")
 }

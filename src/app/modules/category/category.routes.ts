@@ -27,7 +27,6 @@ const parseCategoryData = (validationSchema: any) => {
 
 // Public routes
 router.get("/", categoryController.getAllFromDB);
-router.get("/tree", categoryController.getCategoryTree);
 router.get("/featured", categoryController.getFeaturedCategories);
 router.get("/navigation", categoryController.getNavigationCategories);
 router.get("/slug/:slug", categoryController.getBySlug);
@@ -53,7 +52,7 @@ router.patch(
 router.patch(
   "/:id/featured",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PRODUCT_MANAGER),
-  validateRequest(categoryValidation.updateCategoryFeaturedSchema),
+  parseCategoryData(categoryValidation.updateCategoryFeaturedSchema),
   categoryController.updateCategoryFeatured
 );
 

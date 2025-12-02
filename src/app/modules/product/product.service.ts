@@ -437,7 +437,7 @@ const updateProduct = async (id: string, req: Request) => {
       },
     });
 
-    // Step 2: Update the product
+    // Step 2: Update the product (NO slug update)
     const updatedProduct = await transactionClient.product.update({
       where: { id },
       data: {
@@ -452,6 +452,7 @@ const updateProduct = async (id: string, req: Request) => {
         sku,
         stock,
         brandId: brandId || null,
+        // SLUG IS NOT UPDATED - It remains the same
       },
     });
 

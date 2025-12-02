@@ -7,6 +7,5 @@ export const categorySearchAbleFields: string[] = [
 export const categoryFilterableFields: string[] = [
   "searchTerm",
   "isFeatured",
-  "parentId",
   "hasProducts",
 ];

@@ -19,7 +19,7 @@ const generateSlug = (name: string): string => {
 // Create brand
 const createBrand = async (req: Request) => {
   const file = req.file;
-  const { name, slug: customSlug, description } = req.body; // Removed website
+  const { name, slug: customSlug, description } = req.body;
 
   let imageUrl: string | undefined;
 
@@ -58,7 +58,6 @@ const createBrand = async (req: Request) => {
       slug,
       description,
       imageUrl,
-      // Removed website
     },
   });
 
@@ -89,9 +88,7 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
     if (hasProducts === "true") {
       andConditions.push({
         products: {
-          some: {
-            isActive: true,
-          },
+          some: {},
         },
       });
     } else {
@@ -107,6 +104,7 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
     AND: andConditions.length > 0 ? andConditions : undefined,
   };
 
+  // SIMPLIFIED: Only basic brand info, no product includes
   const result = await prisma.brand.findMany({
     where: whereConditions,
     skip,
@@ -119,26 +117,17 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
         : {
             name: "asc",
           },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      imageUrl: true,
+      createdAt: true,
+      updatedAt: true,
       _count: {
         select: {
-          products: {
-            where: {
-              isActive: true,
-            },
-          },
-        },
-      },
-      products: {
-        where: {
-          isActive: true,
-        },
-        take: 4, // Get 4 products per brand for preview
-        include: {
-          productImages: {
-            where: { isPrimary: true },
-            take: 1,
-          },
+          products: true,
         },
       },
     },
@@ -162,41 +151,14 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
 const getById = async (id: string) => {
   const result = await prisma.brand.findUniqueOrThrow({
     where: { id },
-    include: {
-      products: {
-        where: {
-          isActive: true,
-        },
-        include: {
-          productImages: {
-            where: { isPrimary: true },
-            take: 1,
-          },
-          productCategories: {
-            include: {
-              category: true,
-            },
-          },
-          _count: {
-            select: {
-              productReviews: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 20, // Limit products per brand
-      },
-      _count: {
-        select: {
-          products: {
-            where: {
-              isActive: true,
-            },
-          },
-        },
-      },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      imageUrl: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 
@@ -207,41 +169,14 @@ const getById = async (id: string) => {
 const getBySlug = async (slug: string) => {
   const result = await prisma.brand.findUniqueOrThrow({
     where: { slug },
-    include: {
-      products: {
-        where: {
-          isActive: true,
-        },
-        include: {
-          productImages: {
-            where: { isPrimary: true },
-            take: 1,
-          },
-          productCategories: {
-            include: {
-              category: true,
-            },
-          },
-          _count: {
-            select: {
-              productReviews: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 20, // Limit products per brand
-      },
-      _count: {
-        select: {
-          products: {
-            where: {
-              isActive: true,
-            },
-          },
-        },
-      },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      imageUrl: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 
@@ -251,12 +186,7 @@ const getBySlug = async (slug: string) => {
 // Update brand
 const updateBrand = async (id: string, req: Request) => {
   const file = req.file;
-  const {
-    name,
-    slug: customSlug,
-    description,
-    imageUrl: existingImageUrl,
-  } = req.body; // Removed website
+  const { name, description, imageUrl: existingImageUrl } = req.body;
 
   let imageUrl: string | undefined = existingImageUrl;
 
@@ -270,36 +200,6 @@ const updateBrand = async (id: string, req: Request) => {
   const currentBrand = await prisma.brand.findUniqueOrThrow({
     where: { id },
   });
-
-  // Generate slug if name changed and no custom slug provided
-  let slug = currentBrand.slug;
-  if (name && name !== currentBrand.name && !customSlug) {
-    slug = generateSlug(name);
-
-    // Check if new slug already exists (excluding current brand)
-    const existingSlug = await prisma.brand.findUnique({
-      where: { slug },
-    });
-
-    if (existingSlug && existingSlug.id !== id) {
-      throw new Error(
-        "Brand slug already exists. Please provide a different slug."
-      );
-    }
-  } else if (customSlug && customSlug !== currentBrand.slug) {
-    slug = customSlug;
-
-    // Check if new slug already exists
-    const existingSlug = await prisma.brand.findUnique({
-      where: { slug },
-    });
-
-    if (existingSlug && existingSlug.id !== id) {
-      throw new Error(
-        "Brand slug already exists. Please provide a different slug."
-      );
-    }
-  }
 
   // Check if name already exists (excluding current brand)
   if (name && name !== currentBrand.name) {
@@ -316,10 +216,8 @@ const updateBrand = async (id: string, req: Request) => {
     where: { id },
     data: {
       name,
-      slug,
       description,
       imageUrl,
-      // Removed website
     },
   });
 
@@ -352,14 +250,14 @@ const deleteBrand = async (id: string) => {
 // Get popular brands (brands with most products)
 const getPopularBrands = async () => {
   const result = await prisma.brand.findMany({
-    include: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      imageUrl: true,
       _count: {
         select: {
-          products: {
-            where: {
-              isActive: true,
-            },
-          },
+          products: true,
         },
       },
     },
@@ -368,7 +266,7 @@ const getPopularBrands = async () => {
         _count: "desc",
       },
     },
-    take: 10, // Top 10 popular brands
+    take: 10,
   });
 
   return result;

@@ -9,7 +9,6 @@ const createCategoryValidationSchema = z.object({
   description: z.string().optional(),
   imageUrl: z.string().optional(),
   isFeatured: z.boolean().default(false),
-  parentId: z.string().optional().nullable(),
 });
 
 const updateCategoryValidationSchema = z.object({
@@ -18,17 +17,14 @@ const updateCategoryValidationSchema = z.object({
     .min(1, "Category name is required")
     .min(2, "Category name must be at least 2 characters")
     .optional(),
-  slug: z.string().optional(),
   description: z.string().optional(),
   imageUrl: z.string().optional(),
   isFeatured: z.boolean().optional(),
-  parentId: z.string().optional().nullable(),
 });
 
 const categoryFilterValidationSchema = z.object({
   searchTerm: z.string().optional(),
   isFeatured: z.boolean().optional(),
-  parentId: z.string().optional().nullable(),
   hasProducts: z.boolean().optional(),
 });
 

@@ -301,31 +301,26 @@ const updateBlogPost = async (
 ) => {
   const { categoryIds, ...postData } = updateData;
 
-  // Check if updating slug and it already exists
-  if (postData.slug) {
-    const existingPost = await prisma.blogPost.findFirst({
-      where: {
-        slug: postData.slug,
-        id: { not: id },
-      },
+  const result = await prisma.$transaction(async (transactionClient) => {
+    // Get current post to preserve slug
+    const currentPost = await transactionClient.blogPost.findUnique({
+      where: { id },
+      select: { slug: true },
     });
 
-    if (existingPost) {
-      throw new Error("Blog post with this slug already exists");
-    }
-  }
+    // Update blog post (EXCLUDE slug from update)
+    const { slug, ...postDataWithoutSlug } = postData;
 
-  const result = await prisma.$transaction(async (transactionClient) => {
-    // Update blog post
     const updatedPost = await transactionClient.blogPost.update({
       where: { id },
       data: {
-        ...postData,
+        ...postDataWithoutSlug,
         publishedAt: postData.publishedAt
           ? new Date(postData.publishedAt)
           : postData.publishedAt === false
           ? null
           : undefined,
+        // Slug is NOT updated - it remains as currentPost.slug
       },
     });
 

@@ -4,14 +4,20 @@ const createBlogPostSchema = z.object({
   title: z.string().min(1, "Title is required"),
   slug: z.string().min(1, "Slug is required"),
   excerpt: z.string().optional(),
-  content: z.any(), // JSON content
+  content: z.any(),
   featuredImageUrl: z.string().url().optional(),
   isLatest: z.boolean().default(true),
-  publishedAt: z.string().datetime().optional(),
-  categoryIds: z.array(z.string()).optional(), // Array of category IDs
+  publishedAt: z.coerce.date().optional(), // fixed
+  categoryIds: z.array(z.string()).optional(),
 });
 
-const updateBlogPostSchema = createBlogPostSchema.partial().extend({
+const updateBlogPostSchema = z.object({
+  title: z.string().min(1, "Title is required").optional(),
+  excerpt: z.string().optional(),
+  content: z.any().optional(),
+  featuredImageUrl: z.string().url().optional(),
+  isLatest: z.boolean().optional(),
+  publishedAt: z.coerce.date().optional(), // fixed
   categoryIds: z.array(z.string()).optional(),
 });
 

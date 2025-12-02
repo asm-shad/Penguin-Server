@@ -4,7 +4,6 @@ import auth from "../../middlewares/auth";
 import { brandController } from "./brand.controller";
 import { brandValidation } from "./brand.validation";
 import { fileUploader } from "../../helper/fileUploader";
-import validateRequest from "../../middlewares/validateRequest";
 
 const router = express.Router();
 
