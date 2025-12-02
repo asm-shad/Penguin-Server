@@ -6,6 +6,7 @@ import { productSearchAbleFields } from "./product.constant";
 import { fileUploader } from "../../helper/fileUploader";
 import prisma from "../../shared/prisma";
 import { paginationHelper } from "../../helper/paginationHelper";
+import slugify from "slugify";
 
 // Create product
 const createProduct = async (req: Request) => {
@@ -24,6 +25,24 @@ const createProduct = async (req: Request) => {
     categoryIds,
     variants,
   } = req.body;
+
+  // Generate slug from name
+  const slug = slugify(name, {
+    lower: true,
+    strict: true,
+    trim: true,
+  });
+
+  // Check if slug already exists
+  const existingSlug = await prisma.product.findUnique({
+    where: { slug },
+  });
+
+  if (existingSlug) {
+    throw new Error(
+      "Product slug already exists. Please provide a different product name."
+    );
+  }
 
   // Calculate sale price
   const salePrice = discount > 0 ? price - (price * discount) / 100 : undefined;
@@ -50,10 +69,11 @@ const createProduct = async (req: Request) => {
   }
 
   const result = await prisma.$transaction(async (transactionClient) => {
-    // Step 1: Create the product
+    // Step 1: Create the product with slug
     const createdProduct = await transactionClient.product.create({
       data: {
         name,
+        slug, // Added slug
         description,
         price,
         discount,
@@ -66,7 +86,6 @@ const createProduct = async (req: Request) => {
         brandId: brandId || null,
       },
     });
-
     // Step 2: Create product images
     if (productImages.length > 0) {
       await transactionClient.productImage.createMany({
@@ -595,7 +614,6 @@ const updateProductActive = async (
   return updatedProduct;
 };
 
-// Update product stock
 const updateStock = async (
   id: string,
   stockData: { stock: number; variantId?: string; reason?: string },
@@ -645,7 +663,7 @@ const updateStock = async (
         newStock,
         changeQuantity: newStock - previousStock,
         reason: reason || "Manual adjustment",
-        userId: user?.userId,
+        userId: user?.id, // Changed to user?.id
       },
     });
 

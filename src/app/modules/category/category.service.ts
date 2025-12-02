@@ -260,17 +260,25 @@ const getBySlug = async (slug: string) => {
         include: {
           _count: {
             select: {
-              productCategories: true,
+              productCategories: {
+                where: {
+                  product: {
+                    isActive: true,
+                  },
+                },
+              },
             },
           },
         },
       },
       productCategories: {
+        where: {
+          product: {
+            isActive: true,
+          },
+        },
         include: {
           product: {
-            where: {
-              isActive: true,
-            },
             include: {
               brand: true,
               productImages: {
@@ -289,7 +297,13 @@ const getBySlug = async (slug: string) => {
       },
       _count: {
         select: {
-          productCategories: true,
+          productCategories: {
+            where: {
+              product: {
+                isActive: true,
+              },
+            },
+          },
           children: true,
         },
       },

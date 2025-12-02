@@ -2,21 +2,21 @@ import { z } from "zod";
 
 const createBrandValidationSchema = z.object({
   name: z
-    .string({
-      required_error: "Brand name is required",
-      invalid_type_error: "Brand name must be a string",
-    })
+    .string()
+    .min(1, "Brand name is required")
     .min(2, "Brand name must be at least 2 characters"),
   slug: z.string().optional(),
   description: z.string().optional(),
-  website: z.string().url("Invalid website URL").optional().or(z.literal("")),
 });
 
 const updateBrandValidationSchema = z.object({
-  name: z.string().min(2).optional(),
+  name: z
+    .string()
+    .min(1, "Brand name is required")
+    .min(2, "Brand name must be at least 2 characters")
+    .optional(),
   slug: z.string().optional(),
   description: z.string().optional(),
-  website: z.string().url("Invalid website URL").optional().or(z.literal("")),
   imageUrl: z.string().optional(),
 });
 

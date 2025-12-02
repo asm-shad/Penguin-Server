@@ -2,10 +2,8 @@ import { z } from "zod";
 
 const createCategoryValidationSchema = z.object({
   name: z
-    .string({
-      required_error: "Category name is required",
-      invalid_type_error: "Category name must be a string",
-    })
+    .string()
+    .min(1, "Category name is required")
     .min(2, "Category name must be at least 2 characters"),
   slug: z.string().optional(),
   description: z.string().optional(),
@@ -15,7 +13,11 @@ const createCategoryValidationSchema = z.object({
 });
 
 const updateCategoryValidationSchema = z.object({
-  name: z.string().min(2).optional(),
+  name: z
+    .string()
+    .min(1, "Category name is required")
+    .min(2, "Category name must be at least 2 characters")
+    .optional(),
   slug: z.string().optional(),
   description: z.string().optional(),
   imageUrl: z.string().optional(),
@@ -31,9 +33,7 @@ const categoryFilterValidationSchema = z.object({
 });
 
 const updateCategoryFeaturedSchema = z.object({
-  isFeatured: z.boolean({
-    required_error: "isFeatured is required",
-  }),
+  isFeatured: z.boolean(),
 });
 
 export const categoryValidation = {

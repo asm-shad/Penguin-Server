@@ -19,7 +19,7 @@ const generateSlug = (name: string): string => {
 // Create brand
 const createBrand = async (req: Request) => {
   const file = req.file;
-  const { name, slug: customSlug, description, website } = req.body;
+  const { name, slug: customSlug, description } = req.body; // Removed website
 
   let imageUrl: string | undefined;
 
@@ -57,8 +57,8 @@ const createBrand = async (req: Request) => {
       name,
       slug,
       description,
-      website,
       imageUrl,
+      // Removed website
     },
   });
 
@@ -255,9 +255,8 @@ const updateBrand = async (id: string, req: Request) => {
     name,
     slug: customSlug,
     description,
-    website,
     imageUrl: existingImageUrl,
-  } = req.body;
+  } = req.body; // Removed website
 
   let imageUrl: string | undefined = existingImageUrl;
 
@@ -319,8 +318,8 @@ const updateBrand = async (id: string, req: Request) => {
       name,
       slug,
       description,
-      website,
       imageUrl,
+      // Removed website
     },
   });
 
