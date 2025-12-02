@@ -19,11 +19,11 @@ model User {
   orders              Order[]
   productReviews      ProductReview[]
   wishlists           Wishlist[]
-  author              Author?
   payments            Payment[]
   productInventories  ProductInventory[]
   orderTrackings      OrderTracking[]
   returnRequests      ReturnRequest[]
+  blogPosts           BlogPost[]
 
   @@map("users")
 }

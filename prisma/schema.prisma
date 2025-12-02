@@ -171,11 +171,11 @@ model User {
   orders              Order[]
   productReviews      ProductReview[]
   wishlists           Wishlist[]
-  author              Author?
   payments            Payment[]
   productInventories  ProductInventory[]
   orderTrackings      OrderTracking[]
   returnRequests      ReturnRequest[]
+  blogPosts           BlogPost[]
 
   @@map("users")
 }
@@ -596,23 +596,6 @@ model BlogCategory {
   @@map("blog_categories")
 }
 
-model Author {
-  id                  String     @id @default(uuid())
-  name                String
-  slug                String     @unique
-  bio                 String?
-  profileImageUrl     String?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-
-  // Relations
-  userId              String?    @unique
-  user                User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  blogPosts           BlogPost[]
-
-  @@map("authors")
-}
-
 model BlogPost {
   id                  String             @id @default(uuid())
   title               String
@@ -625,9 +608,9 @@ model BlogPost {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
-  // Relations
-  authorId            String
-  author              Author             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // Relations - CHANGED from authorId to userId
+  userId              String             // Renamed from authorId
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   blogPostCategories  BlogPostCategory[]
 
   @@map("blog_posts")
