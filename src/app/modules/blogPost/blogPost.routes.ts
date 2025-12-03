@@ -3,6 +3,7 @@ import express, { NextFunction, Request, Response } from "express";
 import auth from "../../middlewares/auth";
 import { blogPostController } from "./blogPost.controller";
 import { blogPostValidation } from "./blogPost.validation";
+import { fileUploader } from "../../helper/fileUploader";
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ const router = express.Router();
 const parseBlogPostData = (validationSchema: any) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Handle both form-data and JSON requests
       if (req.body.data) {
         req.body = validationSchema.parse(JSON.parse(req.body.data));
       } else {
@@ -45,6 +47,7 @@ router.get(
 router.post(
   "/",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PRODUCT_MANAGER),
+  fileUploader.upload.single("file"),
   parseBlogPostData(blogPostValidation.createBlogPostSchema),
   blogPostController.createBlogPost
 );
@@ -52,6 +55,7 @@ router.post(
 router.patch(
   "/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PRODUCT_MANAGER),
+  fileUploader.upload.single("file"),
   parseBlogPostData(blogPostValidation.updateBlogPostSchema),
   blogPostController.updateBlogPost
 );

@@ -4,6 +4,8 @@ import { AuthRoutes } from "../modules/auth/auth.routes";
 import { categoryRoutes } from "../modules/category/category.routes";
 import { brandRoutes } from "../modules/brand/brand.route";
 import { productRoutes } from "../modules/product/product.route";
+import { blogCategoryRoutes } from "../modules/blogCategory/blogCategory.routes";
+import { blogPostRoutes } from "../modules/blogPost/blogPost.routes";
 
 const router = express.Router();
 
@@ -27,6 +29,14 @@ const moduleRoutes = [
   {
     path: "/product",
     route: productRoutes,
+  },
+  {
+    path: "/blog-category",
+    route: blogCategoryRoutes,
+  },
+  {
+    path: "/blog-post",
+    route: blogPostRoutes,
   },
 ];
 

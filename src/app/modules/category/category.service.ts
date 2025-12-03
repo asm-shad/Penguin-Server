@@ -227,19 +227,46 @@ const deleteCategory = async (id: string) => {
   return deletedCategory;
 };
 
-// Get featured categories
 const getFeaturedCategories = async () => {
-  const result = await prisma.category.findMany({
+  const categories = await prisma.category.findMany({
     where: {
       isFeatured: true,
+    },
+    include: {
+      // Count the number of active products in each category
+      _count: {
+        select: {
+          productCategories: {
+            where: {
+              product: {
+                isActive: true, // Only count active products
+              },
+            },
+          },
+        },
+      },
     },
     orderBy: {
       name: "asc",
     },
-    take: 8, // Limit to 8 featured categories
+    take: 6,
   });
 
-  return result;
+  // Transform the result to include productCount at root level
+  const categoriesWithCount = categories.map((category) => {
+    // Extract the count
+    const productCount = category._count?.productCategories || 0;
+
+    // Remove the _count field and add productCount
+    const { _count, ...categoryData } = category;
+
+    return {
+      ...categoryData,
+      productCount,
+    };
+  });
+
+  return categoriesWithCount;
 };
 
 // Get all categories for navigation

@@ -10,7 +10,7 @@ import { blogPostService } from "./blogPost.service";
 const createBlogPost = catchAsync(
   async (req: Request & { user?: IAuthUser }, res: Response) => {
     const user = req.user;
-    const result = await blogPostService.createBlogPost(req.body, user);
+    const result = await blogPostService.createBlogPost(req, user);
 
     sendResponse(res, {
       statusCode: httpStatus.CREATED,
@@ -76,7 +76,7 @@ const updateBlogPost = catchAsync(
   async (req: Request & { user?: IAuthUser }, res: Response) => {
     const { id } = req.params;
     const user = req.user;
-    const result = await blogPostService.updateBlogPost(id, req.body, user);
+    const result = await blogPostService.updateBlogPost(id, req, user);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,

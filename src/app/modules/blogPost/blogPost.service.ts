@@ -1,17 +1,41 @@
 import { Prisma } from "@prisma/client";
+import { Request } from "express";
 import { IAuthUser } from "../../interfaces/common";
 import { IPaginationOptions } from "../../interfaces/pagination";
 import { blogPostSearchAbleFields } from "./blogPost.constant";
+import { fileUploader } from "../../helper/fileUploader";
 import prisma from "../../shared/prisma";
 import { paginationHelper } from "../../helper/paginationHelper";
+import slugify from "slugify";
 
-// Create blog post
-const createBlogPost = async (blogPostData: any, user?: IAuthUser) => {
-  const { categoryIds, ...postData } = blogPostData;
+// Generate slug from title
+const generateSlug = (title: string): string => {
+  return slugify(title, {
+    lower: true,
+    strict: true,
+    trim: true,
+  });
+};
+
+// Create blog post with file upload
+const createBlogPost = async (req: Request, user?: IAuthUser) => {
+  const file = req.file;
+  const { categoryIds, ...postData } = req.body;
+
+  let featuredImageUrl: string | undefined;
+
+  // Handle file upload for featured image
+  if (file) {
+    const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
+    featuredImageUrl = uploadToCloudinary?.secure_url;
+  }
+
+  // Generate slug if not provided
+  const slug = postData.slug || generateSlug(postData.title);
 
   // Check if slug already exists
   const existingPost = await prisma.blogPost.findUnique({
-    where: { slug: postData.slug },
+    where: { slug },
   });
 
   if (existingPost) {
@@ -24,10 +48,12 @@ const createBlogPost = async (blogPostData: any, user?: IAuthUser) => {
   }
 
   const result = await prisma.$transaction(async (transactionClient) => {
-    // Create blog post
+    // Create blog post with featuredImageUrl from file upload
     const blogPost = await transactionClient.blogPost.create({
       data: {
         ...postData,
+        slug,
+        featuredImageUrl, // Use uploaded image URL
         publishedAt: postData.publishedAt
           ? new Date(postData.publishedAt)
           : postData.publishedAt === false
@@ -293,13 +319,18 @@ const getBlogPostBySlug = async (
   return result;
 };
 
-// Update blog post
-const updateBlogPost = async (
-  id: string,
-  updateData: any,
-  user?: IAuthUser
-) => {
-  const { categoryIds, ...postData } = updateData;
+// Update blog post with file upload
+const updateBlogPost = async (id: string, req: Request, user?: IAuthUser) => {
+  const file = req.file;
+  const { categoryIds, ...postData } = req.body;
+
+  let featuredImageUrl: string | undefined = postData.featuredImageUrl;
+
+  // Handle file upload if new file is provided
+  if (file) {
+    const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
+    featuredImageUrl = uploadToCloudinary?.secure_url;
+  }
 
   const result = await prisma.$transaction(async (transactionClient) => {
     // Get current post to preserve slug
@@ -308,6 +339,10 @@ const updateBlogPost = async (
       select: { slug: true },
     });
 
+    if (!currentPost) {
+      throw new Error("Blog post not found");
+    }
+
     // Update blog post (EXCLUDE slug from update)
     const { slug, ...postDataWithoutSlug } = postData;
 
@@ -315,6 +350,7 @@ const updateBlogPost = async (
       where: { id },
       data: {
         ...postDataWithoutSlug,
+        featuredImageUrl,
         publishedAt: postData.publishedAt
           ? new Date(postData.publishedAt)
           : postData.publishedAt === false
