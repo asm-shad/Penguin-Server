@@ -452,7 +452,6 @@ const getLatestBlogPosts = async (limit: number = 5) => {
   const result = await prisma.blogPost.findMany({
     where: {
       publishedAt: { not: null },
-      isLatest: true,
     },
     take: limit,
     orderBy: {

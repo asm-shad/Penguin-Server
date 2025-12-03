@@ -84,6 +84,20 @@ const productFilterValidationSchema = z.object({
 
 const updateProductStatusSchema = z.object({
   status: z.enum(ProductStatus),
+  discount: z
+    .number()
+    .min(0)
+    .max(100)
+    .optional()
+    .refine(
+      (discount) => {
+        // Only require discount for HOT and SALE statuses
+        return true; // Always valid, we'll handle validation in service
+      },
+      {
+        message: "Discount must be between 0 and 100",
+      }
+    ),
 });
 
 const updateProductFeaturedSchema = z.object({

@@ -44,8 +44,8 @@ const createProduct = async (req: Request) => {
     );
   }
 
-  // Calculate sale price
-  const salePrice = discount > 0 ? price - (price * discount) / 100 : undefined;
+  // Calculate sale price - ALWAYS set salePrice, even if no discount
+  const salePrice = discount > 0 ? price - (price * discount) / 100 : price; // Changed from undefined to price
 
   // Handle file uploads
   let productImages: {
@@ -77,7 +77,7 @@ const createProduct = async (req: Request) => {
         description,
         price,
         discount,
-        salePrice,
+        salePrice, // This will always have a value now
         status: status as ProductStatus,
         isFeatured,
         isActive,
@@ -404,8 +404,8 @@ const updateProduct = async (id: string, req: Request) => {
     variants,
   } = req.body;
 
-  // Calculate sale price
-  const salePrice = discount > 0 ? price - (price * discount) / 100 : undefined;
+  // Calculate sale price - ALWAYS set salePrice, even if no discount
+  const salePrice = discount > 0 ? price - (price * discount) / 100 : price; // Changed from undefined to price
 
   // Handle file uploads for new images
   let newProductImages: {
@@ -445,14 +445,13 @@ const updateProduct = async (id: string, req: Request) => {
         description,
         price,
         discount,
-        salePrice,
+        salePrice, // This will always have a value now
         status: status as ProductStatus,
         isFeatured,
         isActive,
         sku,
         stock,
         brandId: brandId || null,
-        // SLUG IS NOT UPDATED - It remains the same
       },
     });
 
@@ -567,15 +566,54 @@ const updateProduct = async (id: string, req: Request) => {
 // Update product status
 const updateProductStatus = async (
   id: string,
-  status: { status: ProductStatus }
+  statusData: {
+    status: ProductStatus;
+    discount?: number; // Optional discount for HOT and SALE statuses
+  }
 ) => {
+  const { status, discount } = statusData;
+
   const productData = await prisma.product.findUniqueOrThrow({
     where: { id },
   });
 
+  let updateData: any = {
+    status: status,
+  };
+
+  // If status is HOT or SALE and discount is provided
+  if ((status === "HOT" || status === "SALE") && discount !== undefined) {
+    // Validate discount
+    if (discount < 0 || discount > 100) {
+      throw new Error("Discount must be between 0 and 100");
+    }
+
+    updateData.discount = discount;
+    // Calculate sale price (discounted price)
+    updateData.salePrice =
+      productData.price - (productData.price * discount) / 100;
+  } else if (status === "HOT" || status === "SALE") {
+    // If status is HOT or SALE but no discount provided, keep existing discount
+    // and recalculate sale price with existing discount
+    updateData.salePrice =
+      productData.discount > 0
+        ? productData.price - (productData.price * productData.discount) / 100
+        : productData.price;
+  } else {
+    // For other statuses (NEW, OUT_OF_STOCK, DISCONTINUED)
+    // Set salePrice to be the same as base price (no discount)
+    updateData.discount = 0;
+    updateData.salePrice = productData.price;
+  }
+
+  // If status is OUT_OF_STOCK or DISCONTINUED, also set isActive to false
+  if (status === "OUT_OF_STOCK" || status === "DISCONTINUED") {
+    updateData.isActive = false;
+  }
+
   const updatedProduct = await prisma.product.update({
     where: { id },
-    data: { status: status.status },
+    data: updateData,
   });
 
   return updatedProduct;
