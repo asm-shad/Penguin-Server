@@ -28,8 +28,8 @@ const parseProductData = (validationSchema: any) => {
 // Public routes
 router.get("/", productController.getAllFromDB);
 router.get("/featured", productController.getFeaturedProducts);
-router.get("/new-arrivals", productController.getNewArrivals);
-router.get("/on-sale", productController.getProductsOnSale);
+router.get("/status/:status", productController.getProductsByStatus);
+router.get("/category/:slug", productController.getProductsByCategorySlug);
 router.get("/slug/:slug", productController.getBySlug);
 router.get("/:id", productController.getById);
 

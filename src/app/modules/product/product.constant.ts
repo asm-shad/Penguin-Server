@@ -10,4 +10,5 @@ export const productFilterableFields: string[] = [
   "brandId",
   "categoryId",
   "inStock",
+  "categorySlug",
 ];

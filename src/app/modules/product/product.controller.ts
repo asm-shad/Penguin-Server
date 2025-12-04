@@ -148,27 +148,42 @@ const getFeaturedProducts = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getNewArrivals = catchAsync(async (req: Request, res: Response) => {
-  const result = await productService.getNewArrivals();
+const getProductsByStatus = catchAsync(async (req: Request, res: Response) => {
+  const { status } = req.params;
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+
+  const result = await productService.getProductsByStatus(status, options);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "New arrivals retrieved successfully!",
-    data: result,
+    message: `Products with status ${status} retrieved successfully!`,
+    meta: result.meta,
+    data: result.data,
   });
 });
 
-const getProductsOnSale = catchAsync(async (req: Request, res: Response) => {
-  const result = await productService.getProductsOnSale();
+const getProductsByCategorySlug = catchAsync(
+  async (req: Request, res: Response) => {
+    const { slug } = req.params;
+    const filters = pick(req.query, productFilterableFields);
+    const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
 
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Products on sale retrieved successfully!",
-    data: result,
-  });
-});
+    const result = await productService.getProductsByCategorySlug(
+      slug,
+      filters,
+      options
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: `Products for category '${slug}' retrieved successfully!`,
+      meta: result.meta,
+      data: result.data,
+    });
+  }
+);
 
 export const productController = {
   createProduct,
@@ -182,6 +197,6 @@ export const productController = {
   updateStock,
   deleteProduct,
   getFeaturedProducts,
-  getNewArrivals,
-  getProductsOnSale,
+  getProductsByStatus,
+  getProductsByCategorySlug,
 };

@@ -755,7 +755,6 @@ const getFeaturedProducts = async () => {
     where: {
       isFeatured: true,
       isActive: true,
-      stock: { gt: 0 },
     },
     take: 10,
     include: {
@@ -772,48 +771,212 @@ const getFeaturedProducts = async () => {
   return result;
 };
 
-// Get new arrivals
-const getNewArrivals = async () => {
+const getProductsByStatus = async (
+  statusParam: string,
+  options: IPaginationOptions
+) => {
+  const { page, limit, skip } = paginationHelper.calculatePagination(options);
+
+  // Convert the status parameter to uppercase to match enum
+  const upperStatus = statusParam.toUpperCase();
+
+  // Validate if it's a valid ProductStatus enum value
+  if (!Object.values(ProductStatus).includes(upperStatus as ProductStatus)) {
+    throw new Error(
+      `Invalid status parameter: ${statusParam}. Valid values are: ${Object.values(
+        ProductStatus
+      ).join(", ")}`
+    );
+  }
+
+  // Simple where condition - just match the status field in database
+  const whereCondition: Prisma.ProductWhereInput = {
+    isActive: true,
+    status: upperStatus as ProductStatus,
+  };
+
   const result = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      status: "NEW",
-    },
-    take: 10,
-    include: {
-      brand: true,
-      productImages: {
-        where: { isPrimary: true },
-      },
-    },
+    where: whereCondition,
+    skip,
+    take: limit,
     orderBy: {
       createdAt: "desc",
     },
-  });
-
-  return result;
-};
-
-// Get products on sale
-const getProductsOnSale = async () => {
-  const result = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      discount: { gt: 0 },
-    },
-    take: 10,
     include: {
       brand: true,
       productImages: {
         where: { isPrimary: true },
       },
-    },
-    orderBy: {
-      discount: "desc",
+      productCategories: {
+        include: {
+          category: true,
+        },
+      },
+      _count: {
+        select: {
+          productReviews: true,
+          wishlists: true,
+        },
+      },
     },
   });
 
-  return result;
+  const total = await prisma.product.count({
+    where: whereCondition,
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: result,
+  };
+};
+
+// Get products by category slug
+const getProductsByCategorySlug = async (
+  categorySlug: string,
+  params: any,
+  options: IPaginationOptions
+) => {
+  const { page, limit, skip } = paginationHelper.calculatePagination(options);
+  const {
+    searchTerm,
+    minPrice,
+    maxPrice,
+    status,
+    isFeatured,
+    isActive,
+    brandId,
+    inStock,
+    ...filterData
+  } = params;
+
+  const andConditions: Prisma.ProductWhereInput[] = [];
+
+  // Add category slug filter
+  andConditions.push({
+    productCategories: {
+      some: {
+        category: {
+          slug: categorySlug,
+        },
+      },
+    },
+  });
+
+  // Search term
+  if (searchTerm) {
+    andConditions.push({
+      OR: productSearchAbleFields.map((field) => ({
+        [field]: {
+          contains: searchTerm,
+          mode: "insensitive",
+        },
+      })),
+    });
+  }
+
+  // Price range
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    const priceCondition: any = {};
+    if (minPrice !== undefined) priceCondition.gte = minPrice;
+    if (maxPrice !== undefined) priceCondition.lte = maxPrice;
+    andConditions.push({ price: priceCondition });
+  }
+
+  // Status filter
+  if (status) {
+    andConditions.push({ status });
+  }
+
+  // Featured filter
+  if (isFeatured !== undefined) {
+    andConditions.push({ isFeatured: isFeatured === "true" });
+  }
+
+  // Active filter
+  if (isActive !== undefined) {
+    andConditions.push({ isActive: isActive === "true" });
+  }
+
+  // Brand filter
+  if (brandId) {
+    andConditions.push({ brandId });
+  }
+
+  // Stock filter
+  if (inStock !== undefined) {
+    if (inStock === "true") {
+      andConditions.push({
+        OR: [
+          { stock: { gt: 0 } },
+          { productVariants: { some: { stock: { gt: 0 } } } },
+        ],
+      });
+    } else {
+      andConditions.push({
+        AND: [
+          { stock: { equals: 0 } },
+          { productVariants: { every: { stock: { equals: 0 } } } },
+        ],
+      });
+    }
+  }
+
+  const whereConditions: Prisma.ProductWhereInput = {
+    AND: andConditions.length > 0 ? andConditions : undefined,
+  };
+
+  const result = await prisma.product.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? {
+            [options.sortBy]: options.sortOrder,
+          }
+        : {
+            createdAt: "desc",
+          },
+    include: {
+      brand: true,
+      productCategories: {
+        include: {
+          category: true,
+        },
+      },
+      productImages: {
+        orderBy: {
+          sortOrder: "asc",
+        },
+        take: 1, // Get only primary image
+      },
+      productVariants: true,
+      _count: {
+        select: {
+          productReviews: true,
+          wishlists: true,
+        },
+      },
+    },
+  });
+
+  const total = await prisma.product.count({
+    where: whereConditions,
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: result,
+  };
 };
 
 export const productService = {
@@ -828,6 +991,6 @@ export const productService = {
   updateStock,
   deleteProduct,
   getFeaturedProducts,
-  getNewArrivals,
-  getProductsOnSale,
+  getProductsByStatus,
+  getProductsByCategorySlug,
 };
