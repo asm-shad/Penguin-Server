@@ -173,12 +173,12 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
     });
   }
 
-  // Price range
+  // Price range - Filter by salePrice (final price after discount)
   if (minPrice !== undefined || maxPrice !== undefined) {
     const priceCondition: any = {};
-    if (minPrice !== undefined) priceCondition.gte = minPrice;
-    if (maxPrice !== undefined) priceCondition.lte = maxPrice;
-    andConditions.push({ price: priceCondition });
+    if (minPrice !== undefined) priceCondition.gte = Number(minPrice);
+    if (maxPrice !== undefined) priceCondition.lte = Number(maxPrice);
+    andConditions.push({ salePrice: priceCondition }); // ← Changed from 'price' to 'salePrice'
   }
 
   // Status filter
@@ -879,12 +879,12 @@ const getProductsByCategorySlug = async (
     });
   }
 
-  // Price range
+  // Price range - Filter by salePrice (final price after discount)
   if (minPrice !== undefined || maxPrice !== undefined) {
     const priceCondition: any = {};
-    if (minPrice !== undefined) priceCondition.gte = minPrice;
-    if (maxPrice !== undefined) priceCondition.lte = maxPrice;
-    andConditions.push({ price: priceCondition });
+    if (minPrice !== undefined) priceCondition.gte = Number(minPrice);
+    if (maxPrice !== undefined) priceCondition.lte = Number(maxPrice);
+    andConditions.push({ salePrice: priceCondition }); // ← Changed from 'price' to 'salePrice'
   }
 
   // Status filter
