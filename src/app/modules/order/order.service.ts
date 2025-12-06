@@ -23,14 +23,29 @@ const createOrderTrackingRecord = async (
   notes: string,
   userId?: string
 ) => {
-  return await prisma.orderTracking.create({
-    data: {
-      orderId,
-      status,
-      notes,
-      userId,
-    },
-  });
+  try {
+    // First verify the order exists
+    const orderExists = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true }
+    });
+
+    if (!orderExists) {
+      throw new Error(`Order with ID ${orderId} not found`);
+    }
+
+    return await prisma.orderTracking.create({
+      data: {
+        orderId,
+        status,
+        notes,
+        userId,
+      },
+    });
+  } catch (error) {
+    console.error(`Error creating order tracking for order ${orderId}:`, error);
+    throw error;
+  }
 };
 
 // Create order
@@ -173,7 +188,7 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
     const totalPrice = subtotal - discountAmount;
 
     // Create order
-    const order = await transactionClient.order.create({
+        const order = await transactionClient.order.create({
       data: {
         orderNumber: generateOrderNumber(),
         customerName: shippingName,
@@ -192,6 +207,8 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
       },
     });
 
+    console.log("✅ Order created with ID:", order.id); // Debug log
+
     // Create order items
     await transactionClient.orderItem.createMany({
       data: orderItemsWithDetails.map((item) => ({
@@ -200,13 +217,15 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
       })),
     });
 
-    // Create initial tracking
-    await createOrderTrackingRecord(
-      order.id,
-      "PENDING",
-      "Order created",
-      user?.id
-    );
+    // Create initial tracking - Use the transaction client
+    await transactionClient.orderTracking.create({
+      data: {
+        orderId: order.id, // Use the actual order.id
+        status: "PENDING",
+        notes: "Order created",
+        userId: user?.id,
+      },
+    });
 
     // Return full order
     const fullOrder = await transactionClient.order.findUnique({

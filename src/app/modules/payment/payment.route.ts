@@ -7,19 +7,46 @@ import validateRequest from "../../middlewares/validateRequest";
 
 const router = express.Router();
 
-// Public route for webhooks/callbacks
-router.patch(
-  "/:paymentId/status",
-  validateRequest(paymentValidation.updatePaymentStatusValidationSchema),
-  paymentController.updatePaymentStatus
+// PUBLIC ROUTES (No authentication required)
+
+// SSL IPN Listener (MUST be before body parser in app.ts)
+router.get(
+  "/ipn",
+  paymentController.handleSSLIPN
 );
 
-// Admin routes
+// Stripe Webhook (MUST be before body parser in app.ts)
+router.post(
+  "/webhook/stripe",
+  paymentController.handleStripeWebhook
+);
+
+// Payment initiation (public for customers)
+router.post(
+  "/:orderId/initiate",
+  validateRequest(paymentValidation.initPaymentValidationSchema),
+  paymentController.initPayment
+);
+
+router.post(
+  "/:orderId/initiate-ssl",
+  paymentController.initSSLPayment
+);
+
+// ADMIN ROUTES (Authentication required)
+
 router.post(
   "/order/:orderId",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CUSTOMER_SUPPORT),
   validateRequest(paymentValidation.createPaymentValidationSchema),
   paymentController.createPayment
+);
+
+router.patch(
+  "/:paymentId/status",
+  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CUSTOMER_SUPPORT),
+  validateRequest(paymentValidation.updatePaymentStatusValidationSchema),
+  paymentController.updatePaymentStatus
 );
 
 router.patch(

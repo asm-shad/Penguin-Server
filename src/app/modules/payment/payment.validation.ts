@@ -17,6 +17,12 @@ const createPaymentValidationSchema = z.object({
   gatewayResponse: z.any().optional(),
 });
 
+const initPaymentValidationSchema = z.object({
+  gateway: z.enum(paymentGatewayEnum).optional().default("STRIPE"),
+  successUrl: z.url("Valid URL required").optional(),
+  cancelUrl: z.url("Valid URL required").optional(),
+});
+
 const updatePaymentStatusValidationSchema = z.object({
   paymentStatus: z.enum(paymentStatusEnum),
   transactionId: z.string().optional(),
@@ -32,6 +38,7 @@ const initiateRefundValidationSchema = z.object({
 
 export const paymentValidation = {
   createPaymentValidationSchema,
+  initPaymentValidationSchema,
   updatePaymentStatusValidationSchema,
   initiateRefundValidationSchema,
 };

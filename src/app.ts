@@ -4,10 +4,28 @@ import express, { Application, NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import router from "./app/routes";
+import { paymentController } from "./app/modules/payment/payment.controller";
 
 const app: Application = express();
-app.use(cookieParser());
 
+// === CRITICAL: Webhook routes MUST come before body parsers ===
+// This is because Stripe webhooks require raw body, not parsed JSON
+
+// 1. SSL IPN route (GET with query params)
+app.get(
+  "/api/payments/ipn",
+  paymentController.handleSSLIPN
+);
+
+// 2. Stripe webhook route (POST with raw body)
+app.post(
+  "/api/payments/webhook/stripe",
+  express.raw({ type: "application/json" }),
+  paymentController.handleStripeWebhook
+);
+
+// Now add cookie parser and CORS
+app.use(cookieParser());
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -15,13 +33,13 @@ app.use(
   })
 );
 
-//parser
+// Now add body parsers for all other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req: Request, res: Response) => {
   res.send({
-    Message: "Ph health care server..",
+    Message: "E-commerce server is running..",
   });
 });
 
