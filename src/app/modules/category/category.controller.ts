@@ -106,19 +106,6 @@ const getFeaturedCategories = catchAsync(
   }
 );
 
-const getNavigationCategories = catchAsync(
-  async (req: Request, res: Response) => {
-    const result = await categoryService.getNavigationCategories();
-
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Categories retrieved successfully!",
-      data: result,
-    });
-  }
-);
-
 export const categoryController = {
   createCategory,
   getAllFromDB,
@@ -128,5 +115,4 @@ export const categoryController = {
   updateCategoryFeatured,
   deleteCategory,
   getFeaturedCategories,
-  getNavigationCategories,
 };

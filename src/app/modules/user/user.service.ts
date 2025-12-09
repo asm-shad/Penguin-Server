@@ -79,6 +79,31 @@ const createCustomerSupport = async (req: Request) => {
   return createUser(req, UserRole.CUSTOMER_SUPPORT, true);
 };
 
+const updateUserProfile = async (userId: string, req: Request) => {
+  const userInfo = await prisma.user.findUniqueOrThrow({
+    where: {
+      id: userId,
+    },
+  });
+
+  const file = req.file;
+  let updateData = { ...req.body };
+
+  if (file) {
+    const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
+    updateData.profileImageUrl = uploadToCloudinary?.secure_url;
+  }
+
+  const updatedProfile = await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: updateData,
+  });
+
+  return updatedProfile;
+};
+
 // Regular user creation with address
 const createRegularUser = async (req: Request) => {
   const file = req.file;
@@ -186,12 +211,23 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
   }
 
   if (Object.keys(filterData).length > 0) {
-    andConditions.push({
-      AND: Object.keys(filterData).map((key) => ({
-        [key]: {
-          equals: (filterData as any)[key],
-        },
-      })),
+    Object.keys(filterData).forEach((key) => {
+      if (filterData[key]) {
+        if (key === "phone") {
+          andConditions.push({
+            phone: {
+              contains: filterData[key],
+              mode: "insensitive",
+            },
+          });
+        } else {
+          andConditions.push({
+            [key]: {
+              equals: filterData[key],
+            },
+          });
+        }
+      }
     });
   }
 
@@ -223,6 +259,38 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
       isDeleted: true,
       createdAt: true,
       updatedAt: true,
+      userAddresses: {
+        select: {
+          id: true,
+          addressName: true,
+          email: true,
+          isDefault: true,
+          // Include the address relation
+          address: {
+            select: {
+              id: true,
+              addressLine: true,  // Note: it's addressLine, not addressLine1
+              city: true,
+              state: true,
+              zipCode: true,
+              country: true,
+            },
+          },
+        },
+      },
+      orders: {
+        select: {
+          id: true,
+          orderNumber: true,
+          orderDate: true,
+          totalPrice: true,
+          status: true,
+        },
+        orderBy: {
+          orderDate: "desc",
+        },
+      },
+      // Add other relations as needed
     },
   });
 
@@ -314,6 +382,28 @@ const updateMyProfie = async (user: IAuthUser, req: Request) => {
   return updatedProfile;
 };
 
+const deleteUser = async (id: string) => {
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: { id },
+  });
+
+  // Soft delete by updating isDeleted flag
+  // const deletedUser = await prisma.user.update({
+  //   where: { id },
+  //   data: { 
+  //     isDeleted: true,
+  //     userStatus: UserStatus.DELETED 
+  //   },
+  // });
+
+  // return deletedUser;
+  
+  // OR for hard delete:
+  return await prisma.user.delete({
+    where: { id },
+  });
+};
+
 export const userService = {
   createAdmin,
   createProductManager,
@@ -323,4 +413,6 @@ export const userService = {
   changeProfileStatus,
   getMyProfile,
   updateMyProfie,
+  updateUserProfile,
+  deleteUser,
 };

@@ -4,7 +4,6 @@ import auth from "../../middlewares/auth";
 import { categoryController } from "./category.controller";
 import { categoryValidation } from "./category.validation";
 import { fileUploader } from "../../helper/fileUploader";
-import validateRequest from "../../middlewares/validateRequest";
 
 const router = express.Router();
 
@@ -28,7 +27,6 @@ const parseCategoryData = (validationSchema: any) => {
 // Public routes
 router.get("/", categoryController.getAllFromDB);
 router.get("/featured", categoryController.getFeaturedCategories);
-router.get("/navigation", categoryController.getNavigationCategories);
 router.get("/slug/:slug", categoryController.getBySlug);
 router.get("/:id", categoryController.getById);
 

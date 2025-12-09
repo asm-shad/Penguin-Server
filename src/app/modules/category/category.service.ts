@@ -269,16 +269,6 @@ const getFeaturedCategories = async () => {
   return categoriesWithCount;
 };
 
-// Get all categories for navigation
-const getNavigationCategories = async () => {
-  const categories = await prisma.category.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
-
-  return categories;
-};
 
 export const categoryService = {
   createCategory,
@@ -289,5 +279,4 @@ export const categoryService = {
   updateCategoryFeatured,
   deleteCategory,
   getFeaturedCategories,
-  getNavigationCategories,
 };

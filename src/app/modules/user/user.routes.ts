@@ -83,6 +83,27 @@ router.patch(
 );
 
 router.patch(
+  "/:id",
+  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  fileUploader.upload.single("file"),
+  (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Parse the data field if it exists (for form-data)
+      if (req.body.data) {
+        req.body = userValidation.updateProfileSchema.parse(
+          JSON.parse(req.body.data)
+        );
+      } else {
+        req.body = userValidation.updateProfileSchema.parse(req.body);
+      }
+      return userController.updateUserProfile(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.patch(
   "/update-my-profile",
   auth(
     UserRole.SUPER_ADMIN,
@@ -107,6 +128,12 @@ router.patch(
       next(error);
     }
   }
+);
+
+router.delete(
+  "/:id",
+  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  userController.deleteUser
 );
 
 export const userRoutes = router;

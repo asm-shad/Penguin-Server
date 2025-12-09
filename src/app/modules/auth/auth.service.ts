@@ -238,8 +238,17 @@ const getMe = async (user: any) => {
       isDeleted: true,
       createdAt: true,
       updatedAt: true,
-      // Add any related data you might have in the future
-      // For example: orders, reviews, etc.
+      // ADD user addresses
+      userAddresses: {
+        select: {
+          id: true,
+          addressName: true,
+          isDefault: true,
+          address: true,
+          createdAt: true,
+          updatedAt: true,
+        }
+      }
     },
   });
 

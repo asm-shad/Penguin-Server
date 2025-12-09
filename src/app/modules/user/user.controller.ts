@@ -50,6 +50,20 @@ const createRegularUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateUserProfile = catchAsync(
+  async (req: Request & { user?: IAuthUser }, res: Response) => {
+    const { id } = req.params;
+    const result = await userService.updateUserProfile(id, req);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "User profile updated!",
+      data: result,
+    });
+  }
+);
+
 const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
   const filters = pick(req.query, userFilterableFields);
   const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
@@ -105,6 +119,18 @@ const updateMyProfie = catchAsync(
   }
 );
 
+const deleteUser = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await userService.deleteUser(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User deleted successfully!",
+    data: result,
+  });
+});
+
 export const userController = {
   createAdmin,
   createProductManager,
@@ -114,4 +140,6 @@ export const userController = {
   changeProfileStatus,
   getMyProfile,
   updateMyProfie,
+  updateUserProfile,
+  deleteUser,
 };
