@@ -31,7 +31,10 @@ router.post(
   orderController.createOrder
 );
 
-router.get("/my-orders", auth(UserRole.USER), orderController.getMyOrders);
+router.get("/my-orders", auth(UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.PRODUCT_MANAGER,
+    UserRole.CUSTOMER_SUPPORT), orderController.getMyOrders);
 
 router.get(
   "/my-orders/statistics",

@@ -65,19 +65,20 @@ router.patch(
 );
 
 router.patch(
-  "/:id/active",
-  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PRODUCT_MANAGER),
-  validateRequest(productValidation.updateProductActiveSchema),
-  productController.updateProductActive
-);
-
-router.patch(
   "/:id/stock",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PRODUCT_MANAGER),
   validateRequest(productValidation.updateStockSchema),
   productController.updateStock
 );
 
+// Soft delete route (archive)
+router.patch(
+  "/archive/:id",
+  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PRODUCT_MANAGER),
+  productController.archiveProduct
+);
+
+// Hard delete route (permanent)
 router.delete(
   "/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PRODUCT_MANAGER),

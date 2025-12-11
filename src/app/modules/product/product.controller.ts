@@ -94,18 +94,6 @@ const updateProductFeatured = catchAsync(
   }
 );
 
-const updateProductActive = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const result = await productService.updateProductActive(id, req.body);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Product active status updated successfully!",
-    data: result,
-  });
-});
-
 const updateStock = catchAsync(
   async (req: Request & { user?: IAuthUser }, res: Response) => {
     const { id } = req.params;
@@ -124,6 +112,18 @@ const updateStock = catchAsync(
     });
   }
 );
+
+const archiveProduct = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await productService.archiveProduct(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Product deleted successfully!",
+    data: result,
+  });
+});
 
 const deleteProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -193,8 +193,8 @@ export const productController = {
   updateProduct,
   updateProductStatus,
   updateProductFeatured,
-  updateProductActive,
   updateStock,
+  archiveProduct,
   deleteProduct,
   getFeaturedProducts,
   getProductsByStatus,

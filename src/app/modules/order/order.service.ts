@@ -454,7 +454,19 @@ const getMyOrders = async (
   params: any,
   options: IPaginationOptions
 ) => {
-  return getAllFromDB(params, options, user);
+  // Always filter by the authenticated user's ID, regardless of role
+  const modifiedParams = {
+    ...params,
+    userId: user.id, // Explicitly add userId to params
+  };
+
+  // Override the user parameter to ensure USER role for filtering
+  const modifiedUser = {
+    ...user,
+    role: "USER" as const, // Force USER role to trigger filtering
+  };
+
+  return getAllFromDB(modifiedParams, options, modifiedUser);
 };
 
 // Get order statistics

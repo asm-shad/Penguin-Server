@@ -31,8 +31,8 @@ const orderFilterValidationSchema = z.object({
   status: z.enum(orderStatusEnum).optional(),
   paymentStatus: z.string().optional(),
   customerEmail: z.string().email().optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
   minAmount: z.number().positive().optional(),
   maxAmount: z.number().positive().optional(),
 });

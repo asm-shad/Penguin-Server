@@ -238,7 +238,6 @@ const getMe = async (user: any) => {
       isDeleted: true,
       createdAt: true,
       updatedAt: true,
-      // ADD user addresses
       userAddresses: {
         select: {
           id: true,
@@ -247,6 +246,85 @@ const getMe = async (user: any) => {
           address: true,
           createdAt: true,
           updatedAt: true,
+        }
+      },
+      // ADD ORDERS HERE (as you initially wanted)
+      orders: {
+        select: {
+          id: true,
+          orderNumber: true,
+          customerName: true,
+          customerEmail: true,
+          orderDate: true,
+          subtotal: true,
+          discountAmount: true,
+          totalPrice: true,
+          status: true,
+          shippingName: true,
+          shippingAddress: true,
+          shippingCity: true,
+          shippingState: true,
+          shippingZipCode: true,
+          createdAt: true,
+          updatedAt: true,
+          // Include related data
+          orderItems: {
+            select: {
+              id: true,
+              productName: true,
+              productId: true,
+              variantInfo: true,
+              quantity: true,
+              unitPrice: true,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  productImages: {
+                    select: {
+                      id: true,
+                      imageUrl: true,
+                      isPrimary: true,
+                    }
+                  }
+                }
+              }
+            }
+          },
+          payments: {
+            select: {
+              id: true,
+              paymentMethod: true,
+              paymentStatus: true,
+              amount: true,
+              paidAt: true,
+            }
+          },
+          shipping: {
+            select: {
+              id: true,
+              shippingMethod: true,
+              shippingCost: true,
+            }
+          },
+          orderTrackings: {
+            select: {
+              id: true,
+              status: true,
+              notes: true,
+              createdAt: true,
+            }
+          },
+          invoice: {
+            select: {
+              id: true,
+              hostedInvoiceUrl: true,
+              invoiceNumber: true,
+            }
+          }
+        },
+        orderBy: {
+          orderDate: 'desc' // Order by most recent first
         }
       }
     },

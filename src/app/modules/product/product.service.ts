@@ -734,16 +734,41 @@ const updateStock = async (
   });
 };
 
-// Delete product (soft delete)
+const archiveProduct = async (id: string) => {
+  const productData = await prisma.product.findUniqueOrThrow({
+    where: { id },
+  });
+
+  const archivedProduct = await prisma.product.update({
+    where: { id },
+    data: { isActive: false },
+  });
+
+  return archivedProduct;
+};
+
+// Delete (hard delete)
 const deleteProduct = async (id: string) => {
   const productData = await prisma.product.findUniqueOrThrow({
     where: { id },
   });
 
-  // Soft delete by setting isActive to false
-  const deletedProduct = await prisma.product.update({
+  // Delete related records first (adjust based on your schema)
+  await prisma.productCategory.deleteMany({
+    where: { productId: id },
+  });
+  
+  await prisma.productImage.deleteMany({
+    where: { productId: id },
+  });
+  
+  await prisma.productVariant.deleteMany({
+    where: { productId: id },
+  });
+  
+  // Then delete the product
+  const deletedProduct = await prisma.product.delete({
     where: { id },
-    data: { isActive: false },
   });
 
   return deletedProduct;
@@ -987,8 +1012,8 @@ export const productService = {
   updateProduct,
   updateProductStatus,
   updateProductFeatured,
-  updateProductActive,
   updateStock,
+  archiveProduct,
   deleteProduct,
   getFeaturedProducts,
   getProductsByStatus,
