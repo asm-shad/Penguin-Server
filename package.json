@@ -8,7 +8,7 @@
     "schema": "./prisma/schema.prisma"
   },
   "scripts": {
-    "build:schema": "ts-node build-schema.ts",
+    "build:schema": "ts-node-dev --respawn --transpile-only build-schema.ts",
     "prisma:generate": "npm run build:schema && prisma generate",
     "prisma:migrate": "npm run build:schema && prisma migrate dev",
     "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",

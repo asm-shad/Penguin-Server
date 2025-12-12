@@ -1,4 +1,3 @@
-// --- Start of order_payment.prisma ---
 model Coupon {
   id              String         @id @default(uuid())
   code            String         @unique
@@ -163,4 +162,3 @@ model Shipping {
 
   @@map("shipping")
 }
-// --- End of order_payment.prisma ---

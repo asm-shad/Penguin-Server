@@ -1,4 +1,3 @@
-// --- Start of blog.prisma ---
 model BlogCategory {
   id                   String             @id @default(uuid())
   name                 String
@@ -46,4 +45,3 @@ model BlogPostCategory {
   @@unique([blogPostId, categoryId])
   @@map("blog_post_categories")
 }
-// --- End of blog.prisma ---

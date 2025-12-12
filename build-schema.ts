@@ -24,21 +24,28 @@ let finalSchema = "";
 
 console.log("🏗️ Building Prisma schema from multiple files...");
 
-schemaFileOrder.forEach((fileName) => {
+schemaFileOrder.forEach((fileName, index) => {
   const filePath = path.join(schemaDir, fileName);
 
   if (fs.existsSync(filePath)) {
-    console.log(`  - Adding ${fileName}`);
     const content = fs.readFileSync(filePath, "utf-8");
 
-    // Add a separator comment for clarity in the final schema.prisma file
-    finalSchema += `\n// --- Start of ${fileName} ---\n\n`;
-    finalSchema += content;
-    finalSchema += `\n// --- End of ${fileName} ---\n\n`;
+    if (index === 0) {
+      // First file (head.pschema) — do NOT add comments
+      finalSchema += content + "\n\n";
+    } else {
+      // Other files — add start/end comments
+      finalSchema += `\n// --- Start of ${fileName} ---\n\n`;
+      finalSchema += content + "\n";
+      finalSchema += `// --- End of ${fileName} ---\n`;
+    }
+
+    console.log(`  - Added ${fileName}`);
   } else {
     console.warn(`⚠️ WARNING: File not found: ${fileName}. Skipping.`);
   }
 });
+
 
 // Write the combined content to the target file
 try {

@@ -1,4 +1,3 @@
-// --- Start of product_inventory.prisma ---
 model Brand {
   id          String    @id @default(uuid())
   name        String    @unique
@@ -134,4 +133,3 @@ model ProductInventory {
 
   @@map("product_inventories")
 }
-// --- End of product_inventory.prisma ---

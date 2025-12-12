@@ -1,4 +1,3 @@
-// --- Start of misc.prisma ---
 model ProductReview {
   id            String    @id @default(uuid())
   rating        Int
@@ -33,4 +32,3 @@ model Wishlist {
 }
 
 // REMOVED: AuditLog model
-// --- End of misc.prisma ---
