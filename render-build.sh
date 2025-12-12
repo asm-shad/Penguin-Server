@@ -5,4 +5,4 @@ set -o errexit
 pnpm install
 pnpm run build
 npx prisma generate --schema=./prisma/schema.prisma
-npx prisma migrate deploy
+npx prisma migrate deploy --schema=./prisma/schema.prisma
