@@ -15,12 +15,6 @@ router.get(
   paymentController.handleSSLIPN
 );
 
-// Stripe Webhook (MUST be before body parser in app.ts)
-router.post(
-  "/webhook/stripe",
-  paymentController.handleStripeWebhook
-);
-
 // Payment initiation (public for customers)
 router.post(
   "/:orderId/initiate",

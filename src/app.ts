@@ -19,7 +19,7 @@ app.get(
 
 // 2. Stripe webhook route (POST with raw body)
 app.post(
-  "/api/payments/webhook/stripe",
+  "/webhook",
   express.raw({ type: "application/json" }),
   paymentController.handleStripeWebhook
 );
@@ -28,7 +28,7 @@ app.post(
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "https://gen-z-mart-frontend.vercel.app"],
     credentials: true,
   })
 );
