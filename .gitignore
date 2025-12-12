@@ -1,8 +1,11 @@
 node_modules
-dist
+dist/
 .env
 .env.test
 
-/src/generated/prisma
-
-/src/generated/prisma
+/generated/prisma
+.vercel
+.env.local
+uploads/*
+!uploads/.gitkeep
+*.log

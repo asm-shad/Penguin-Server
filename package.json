@@ -11,7 +11,11 @@
     "build:schema": "ts-node build-schema.ts",
     "prisma:generate": "npm run build:schema && prisma generate",
     "prisma:migrate": "npm run build:schema && prisma migrate dev",
-    "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts"
+    "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",
+    "build": "tsc",
+    "start": "node ./dist/server.js",
+    "postinstall": "prisma generate --schema=./prisma/schema",
+    "stripe:webhook": "stripe listen --forward-to localhost:5000/webhook"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.1",
