@@ -179,37 +179,169 @@ Tech Stack
 *   Nodemailer
     
 
-Environment Variables
----------------------
+### 📁 Project Structure (Simplified)
+----------
+
+src
+
+├── modules
+
+│ ├── auth
+
+│ ├── product
+
+│ ├── order
+
+│ ├── payment
+
+│ ├── brand
+
+│ ├── category
+
+│ ├── blogCategory
+
+│ ├── blogPost
+
+│ ├── coupon
+
+│ ├── shipping
+
+│ ├── return
+
+│ ├── meta
+
+│ └── user
+
+├── utils
+
+├── helpers
+
+├── app.ts
+
+└── server.ts
+
+### 🛠 Installation & Setup
+
+1\. Clone Repository
+
+git clone https://github.com/your-username/genzmart-backend.git
+
+cd genzmart-backend
+
+2\. Install Dependencies
+
+pnpm install
+
+3\. Generate Prisma Schema
+
+pnpm prisma:generate
+
+4\. Run Migrations
+
+pnpm prisma:migrate
+
+5\. Start Development Server
+
+pnpm dev
+
+### 🔐 Environment Variables
 
 Create a .env file:
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   DATABASE_URL=  JWT_SECRET=  CLOUDINARY_CLOUD_NAME=  CLOUDINARY_API_KEY=  CLOUDINARY_API_SECRET=  STRIPE_SECRET_KEY=  STRIPE_WEBHOOK_SECRET=  SSLC_STORE_ID=  SSLC_STORE_PASS=  SSLC_SUCCESS_URL=  SSLC_FAIL_URL=  SSLC_CANCEL_URL=  PORT=5000   `
+DATABASE\_URL="postgresql://..."
 
-Installation & Setup
---------------------
+JWT\_SECRET="your\_jwt\_secret"
 
-### 1\. Clone Repository
+JWT\_EXPIRES\_IN="7d"
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   git clone https://github.com//genzmart-backend.git  cd genzmart-backend   `
+STRIPE\_SECRET\_KEY=""
 
-### 2\. Install Dependencies
+STRIPE\_WEBHOOK\_SECRET=""
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   pnpm install   `
+SSL\_STORE\_ID=""
 
-### 3\. Prisma Setup
+SSL\_STORE\_PASSWORD=""
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   pnpm run build:schema  pnpm run prisma:generate  pnpm run prisma:migrate   `
+SSL\_STORE\_URL=""
 
-### 4\. Start Development Server
+CLOUDINARY\_CLOUD\_NAME=""
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   pnpm run dev   `
+CLOUDINARY\_API\_KEY=""
 
-### 5\. Production Build
+CLOUDINARY\_API\_SECRET=""
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   pnpm run build  pnpm start   `
+MAIL\_USER=""
 
-Available Scripts
------------------
+MAIL\_PASS=""
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   pnpm run dev                # Development server  pnpm run build              # Build TypeScript  pnpm run start              # Run production build  pnpm run build:schema       # Merge modular Prisma schemas  pnpm run prisma:generate    # Generate Prisma client  pnpm run prisma:migrate     # Run database migrations  pnpm run stripe:webhook     # Stripe webhook listener   `
+### 📘 API Standards
+
+RESTful endpoints
+
+Zod request validation
+
+Global error handler
+
+Consistent response structure
+
+### 📈 Future Roadmap
+
+GenZMart is designed to grow. Upcoming planned modules include:
+
+Product Inventory System
+
+Real-time stock tracking
+
+Stock logs
+
+Low-stock alerts
+
+Product Variant System
+
+Size, color, material variations
+
+SKU-wise inventory
+
+Advanced Invoice System
+
+Printable invoices
+
+Tax/VAT calculation
+
+Integrated email delivery
+
+Return & Refund Workflow
+
+Advanced return approval
+
+Partial refund logic
+
+Return item tracking
+
+Delivery/Shipping Automation
+
+Multi-vendor shipping service support
+
+Real-time delivery updates
+
+Product Manager Dashboard
+
+Product creation
+
+Variant and inventory management
+
+Bulk upload
+
+Customer Support Dashboard
+
+Ticket creation
+
+Order issue handling
+
+Customer communication logs
+
+### 🤝 Contributing
+
+Pull requests are welcome.
+
+For major changes, please open an issue first to discuss what you would like to change.
