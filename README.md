@@ -183,48 +183,52 @@ Tech Stack
 ----------
 
 src
+├── app
 
-├── modules
+│ ├── modules
 
-│ ├── auth
+│ │ ├── auth
 
-│ ├── product
+│ │ ├── product
 
-│ ├── order
+│ │ ├── order
 
-│ ├── payment
+│ │ ├── payment
 
-│ ├── brand
+│ │ ├── brand
 
-│ ├── category
+│ │ ├── category
 
-│ ├── blogCategory
+│ │ ├── blogCategory
 
-│ ├── blogPost
+│ │ ├── blogPost
 
-│ ├── coupon
+│ │ ├── coupon
 
-│ ├── shipping
+│ │ ├── shipping
 
-│ ├── return
+│ │ ├── return
 
-│ ├── meta
+│ │ ├── meta
 
-│ └── user
+│ │ └── user
 
-├── utils
+│ ├── utils
 
-├── helpers
+│ ├── helpers
+
+├── config
 
 ├── app.ts
 
 └── server.ts
 
 ### 🛠 Installation & Setup
+----------
 
 1\. Clone Repository
 
-git clone https://github.com/your-username/genzmart-backend.git
+git clone https://github.com/asm-shad/genzmart-backend.git
 
 cd genzmart-backend
 
@@ -285,6 +289,7 @@ Global error handler
 Consistent response structure
 
 ### 📈 Future Roadmap
+----------
 
 GenZMart is designed to grow. Upcoming planned modules include:
 
