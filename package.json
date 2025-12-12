@@ -14,7 +14,7 @@
     "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",
     "build": "tsc",
     "start": "node ./dist/server.js",
-    "postinstall": "prisma generate --schema=./prisma/schema",
+    "postinstall": "prisma generate --schema=./prisma/schema.prisma",
     "stripe:webhook": "stripe listen --forward-to localhost:5000/webhook"
   },
   "dependencies": {
