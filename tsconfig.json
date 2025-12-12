@@ -1,4 +1,3 @@
-// tsconfig.json (Updated)
 {
   "compilerOptions": {
     "rootDir": "./",
@@ -13,8 +12,7 @@
   },
   "include": [
     "src",
-    "prisma.config.js",
-    "build-schema.ts" // <--- ADD THIS LINE
-    // OR: "**/*.ts" if you want to include all TypeScript files in the project
+    "build-schema.ts",
+    "prisma.config.ts"
   ]
 }
