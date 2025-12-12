@@ -13,7 +13,7 @@
   },
   "include": [
     "src",
-    "prisma.config.ts",
+    "prisma.config.js",
     "build-schema.ts" // <--- ADD THIS LINE
     // OR: "**/*.ts" if you want to include all TypeScript files in the project
   ]

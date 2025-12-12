@@ -3,6 +3,6 @@
 set -o errexit
 
 pnpm install
-pnpm run build:schema
-pnpm exec ts-node prisma generate --schema=./prisma/schema.prisma
-pnpm exec ts-node prisma migrate deploy
+pnpm run build
+npx prisma generate --schema=./prisma/schema.prisma
+npx prisma migrate deploy
