@@ -8,6 +8,7 @@ import { blogCategoryRoutes } from "../modules/blogCategory/blogCategory.routes"
 import { blogPostRoutes } from "../modules/blogPost/blogPost.routes";
 import { paymentRoutes } from "../modules/payment/payment.route";
 import { orderRoutes } from "../modules/order/order.route";
+import { couponRoutes } from "../modules/coupon/coupon.routes";
 
 const router = express.Router();
 
@@ -40,17 +41,17 @@ const moduleRoutes = [
     path: "/blog-post",
     route: blogPostRoutes,
   },
-    {
-    path: '/payments',
+  {
+    path: "/payments",
     route: paymentRoutes,
   },
   {
-    path: '/orders',
+    path: "/orders",
     route: orderRoutes,
   },
   {
-    path: '/coupon',
-    route: orderRoutes,
+    path: "/coupon",
+    route: couponRoutes,
   },
 ];
 
