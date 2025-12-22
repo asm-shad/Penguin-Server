@@ -27,7 +27,7 @@ const createOrderTrackingRecord = async (
     // First verify the order exists
     const orderExists = await prisma.order.findUnique({
       where: { id: orderId },
-      select: { id: true }
+      select: { id: true },
     });
 
     if (!orderExists) {
@@ -62,8 +62,10 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
   } = req.body;
 
   const result = await prisma.$transaction(async (transactionClient) => {
-    // Calculate order totals and validate products
-    let subtotal = 0;
+    // Track both original and discounted prices
+    let subtotalWithoutDiscounts = 0; // Original prices total
+    let subtotalWithProductDiscounts = 0; // After product discounts
+    let totalProductDiscount = 0; // Total of all product discounts
     const orderItemsWithDetails = [];
 
     for (const item of orderItems) {
@@ -91,15 +93,28 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
           );
         }
 
-        const unitPrice = variant.price || product.price;
-        const itemTotal = unitPrice * item.quantity;
-        subtotal += itemTotal;
+        // Calculate product discount
+        const basePrice = variant.price || product.price;
+        const productDiscountPercent = product.discount || 0;
+        const productDiscountAmount =
+          (basePrice * productDiscountPercent) / 100;
+        const discountedPrice = basePrice - productDiscountAmount;
+
+        // Track totals
+        const originalItemTotal = basePrice * item.quantity;
+        const discountedItemTotal = discountedPrice * item.quantity;
+        const itemProductDiscount = productDiscountAmount * item.quantity;
+
+        subtotalWithoutDiscounts += originalItemTotal;
+        subtotalWithProductDiscounts += discountedItemTotal;
+        totalProductDiscount += itemProductDiscount;
 
         orderItemsWithDetails.push({
           productId: item.productId,
           variantId: item.variantId,
           quantity: item.quantity,
-          unitPrice,
+          unitPrice: discountedPrice, // Store the discounted price
+          discount: itemProductDiscount, // Store total discount for this item
           productName: product.name,
           productSlug: product.slug,
           variantInfo: `${variant.name}: ${variant.value}`,
@@ -123,14 +138,28 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
           throw new Error(`Insufficient stock for product: ${product.name}`);
         }
 
-        const itemTotal = product.price * item.quantity;
-        subtotal += itemTotal;
+        // Calculate product discount
+        const basePrice = product.price;
+        const productDiscountPercent = product.discount || 0;
+        const productDiscountAmount =
+          (basePrice * productDiscountPercent) / 100;
+        const discountedPrice = basePrice - productDiscountAmount;
+
+        // Track totals
+        const originalItemTotal = basePrice * item.quantity;
+        const discountedItemTotal = discountedPrice * item.quantity;
+        const itemProductDiscount = productDiscountAmount * item.quantity;
+
+        subtotalWithoutDiscounts += originalItemTotal;
+        subtotalWithProductDiscounts += discountedItemTotal;
+        totalProductDiscount += itemProductDiscount;
 
         orderItemsWithDetails.push({
           productId: item.productId,
           variantId: null,
           quantity: item.quantity,
-          unitPrice: product.price,
+          unitPrice: discountedPrice, // Store the discounted price
+          discount: itemProductDiscount, // Store total discount for this item
           productName: product.name,
           productSlug: product.slug,
           variantInfo: null,
@@ -145,8 +174,11 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
     }
 
     // Apply coupon if provided
-    let discountAmount = 0;
+    let couponDiscountAmount = 0;
     let coupon = null;
+
+    // Use discounted subtotal for coupon validation
+    const subtotalForCoupon = subtotalWithProductDiscounts;
 
     if (couponCode) {
       coupon = await transactionClient.coupon.findFirst({
@@ -166,16 +198,16 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
         throw new Error("Coupon usage limit reached");
       }
 
-      if (coupon.minOrderAmount && subtotal < coupon.minOrderAmount) {
+      if (coupon.minOrderAmount && subtotalForCoupon < coupon.minOrderAmount) {
         throw new Error(
           `Minimum order amount of $${coupon.minOrderAmount} required for this coupon`
         );
       }
 
       if (coupon.discountType === "PERCENTAGE") {
-        discountAmount = (subtotal * coupon.discountValue) / 100;
+        couponDiscountAmount = (subtotalForCoupon * coupon.discountValue) / 100;
       } else {
-        discountAmount = coupon.discountValue;
+        couponDiscountAmount = coupon.discountValue;
       }
 
       await transactionClient.coupon.update({
@@ -184,17 +216,21 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
       });
     }
 
-    // Calculate total
-    const totalPrice = subtotal - discountAmount;
+    // Calculate final totals
+    const totalDiscountAmount = totalProductDiscount + couponDiscountAmount;
+    const totalPrice = subtotalForCoupon - couponDiscountAmount;
 
     // Create order
-        const order = await transactionClient.order.create({
+    const order = await transactionClient.order.create({
       data: {
         orderNumber: generateOrderNumber(),
         customerName: shippingName,
         customerEmail: user?.email || "",
-        subtotal,
-        discountAmount,
+        // Store the original subtotal (without any discounts)
+        subtotal: subtotalWithoutDiscounts,
+        // Store total discount (product + coupon)
+        discountAmount: totalDiscountAmount,
+        // Store final price
         totalPrice,
         shippingName,
         shippingAddress,
@@ -207,7 +243,7 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
       },
     });
 
-    console.log("✅ Order created with ID:", order.id); // Debug log
+    console.log("✅ Order created with ID:", order.id);
 
     // Create order items
     await transactionClient.orderItem.createMany({
@@ -217,10 +253,10 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
       })),
     });
 
-    // Create initial tracking - Use the transaction client
+    // Create initial tracking
     await transactionClient.orderTracking.create({
       data: {
-        orderId: order.id, // Use the actual order.id
+        orderId: order.id,
         status: "PENDING",
         notes: "Order created",
         userId: user?.id,
@@ -238,7 +274,13 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
         orderItems: {
           include: {
             product: {
-              select: { id: true, name: true, slug: true, price: true },
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                price: true,
+                discount: true,
+              },
             },
             variant: {
               select: { id: true, name: true, value: true, price: true },
@@ -252,6 +294,16 @@ const createOrder = async (req: Request & { user?: IAuthUser }) => {
         },
         shipping: true,
       },
+    });
+
+    // Log for debugging
+    console.log("Order totals:", {
+      originalSubtotal: subtotalWithoutDiscounts,
+      afterProductDiscounts: subtotalWithProductDiscounts,
+      productDiscount: totalProductDiscount,
+      couponDiscount: couponDiscountAmount,
+      totalDiscount: totalDiscountAmount,
+      finalTotal: totalPrice,
     });
 
     return fullOrder;
